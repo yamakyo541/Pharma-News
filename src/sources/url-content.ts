@@ -5,8 +5,8 @@ import { extractUrls, expandUrls } from "../utils/post-optimizer.js";
 import { chunkArray } from "../utils/chunk.js";
 
 /**
- * ツイート内URLの本文を Jina Reader で取得する。
- * 返す Map のキーはツイート内に出現する短縮URL（extractUrls で抽出したもの）。
+ * 入力テキスト内URLの本文を Jina Reader で取得する。
+ * 返す Map のキーは出現する短縮URL（extractUrls で抽出したもの）。
  * url-summarizer がそのまま Map.get(url) で引けるようにする。
  */
 export async function fetchUrlContents(
@@ -29,7 +29,7 @@ export async function fetchUrlContents(
   console.info(`→ ${uniqueRawUrls.length}件 のURLをHEADで展開中`);
   const urlMapping = await expandUrls(uniqueRawUrls);
   console.info(
-    `→ 外部URL: ${urlMapping.size}件（x.com/twitter.com を除外済み）`,
+    `→ 本文取得対象URL: ${urlMapping.size}件（展開後の除外ドメインはスキップ済み）`,
   );
 
   if (urlMapping.size === 0) return contents;

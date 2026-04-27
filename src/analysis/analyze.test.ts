@@ -37,7 +37,7 @@ const sampleTweets: EnrichedTweet[] = [
     authorId: "test",
     text: "AI news",
     createdAt: "2026-04-16T10:00:00.000Z",
-    url: "https://x.com/test/status/1",
+    url: "https://example.com/news/ai-1",
     enrichedText: "AI news",
   },
 ];
@@ -49,17 +49,17 @@ const validResponse = {
     {
       title: "Test News",
       details: ["Detail"],
-      sources: ["https://x.com/test/status/1"],
+      sources: ["https://example.com/news/ai-1"],
     },
     {
       title: "Test News 2",
       details: ["Detail"],
-      sources: ["https://x.com/test/status/2"],
+      sources: ["https://example.com/news/ai-2"],
     },
     {
       title: "Test News 3",
       details: ["Detail"],
-      sources: ["https://x.com/test/status/3"],
+      sources: ["https://example.com/news/ai-3"],
     },
   ],
 };

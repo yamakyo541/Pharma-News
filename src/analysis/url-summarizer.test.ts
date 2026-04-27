@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Settings } from "../settings.js";
+import { settings as appSettings } from "../settings.js";
 import type { Config } from "../config.js";
 import type { RawTweet } from "../types.js";
 
@@ -18,24 +19,20 @@ const { summarizeUrls } = await import("./url-summarizer.js");
 const mockConfig: Config = {
   JINA_API_KEY: "test",
   GEMINI_API_KEY: "test",
-  SLACK_BOT_TOKEN: "xoxb-test",
-  SLACK_CHANNEL: "C123",
+  GMAIL_USER: "bot@example.com",
+  GMAIL_APP_PASSWORD: "abcdabcdabcdabcd",
+  GMAIL_TO: "you@example.com",
   USE_SAMPLE_DATA: true,
 };
 
 const mockSettings: Settings = {
-  schedule: { lookbackHours: 24, maxTweets: 100 },
+  ...appSettings,
+  schedule: { ...appSettings.schedule },
   urlContent: {
+    ...appSettings.urlContent,
     enabled: true,
     timeoutMs: 5000,
     parallelism: 5,
-    maxSummaryChars: 200,
-    inputCharsMultiplier: 20,
-  },
-  analysis: {
-    urlSummaryModel: "gemini-2.5-flash",
-    trendAnalysisModel: "gemini-2.5-pro",
-    temperature: 0,
   },
 };
 
@@ -44,7 +41,7 @@ const sampleTweets: RawTweet[] = [
     authorId: "user1",
     text: "Check out https://example.com/article",
     createdAt: "2026-04-16T10:00:00.000Z",
-    url: "https://x.com/user1/status/1",
+    url: "https://example.com/post/1",
   },
 ];
 

@@ -8,17 +8,17 @@ const validAnalysis = {
     {
       title: "GPT-5.5が発表",
       details: ["ネイティブtool use対応", "推論速度が大幅向上"],
-      sources: ["https://x.com/OpenAI/status/123"],
+      sources: ["https://example.com/news/openai-123"],
     },
     {
       title: "Cursor Background Agent",
       details: ["寝ている間にPRを作成"],
-      sources: ["https://x.com/cursor/status/456"],
+      sources: ["https://example.com/news/cursor-456"],
     },
     {
       title: "テスト時計算量スケーリング",
       details: ["より大きなモデルからスマートな推論へ", "推論コスト削減"],
-      sources: ["https://x.com/research/status/789"],
+      sources: ["https://example.com/news/research-789"],
     },
   ],
 };

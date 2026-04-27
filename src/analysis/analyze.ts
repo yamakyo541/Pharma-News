@@ -4,7 +4,7 @@ import {
   analysisResponseSchema,
   type Analysis,
 } from "./schema.js";
-import { TREND_ANALYSIS_PROMPT } from "./prompts.js";
+import { PHARMA_RSS_TREND_ANALYSIS_PROMPT } from "./prompts.js";
 import type { Config } from "../config.js";
 import type { Settings } from "../settings.js";
 import type { EnrichedTweet } from "../types.js";
@@ -16,7 +16,7 @@ export async function analyzeTrends(
   config: Config,
   settings: Settings,
 ): Promise<Analysis> {
-  console.info("[3b/4] タイムライン全体を Gemini Pro で分析中...");
+  console.info("[3b/4] 収集ニュース全体を Gemini Pro で分析中...");
   const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
 
   const tweetsForPrompt = Object.entries(groupByAuthor(tweets)).map(
@@ -29,7 +29,7 @@ export async function analyzeTrends(
     }),
   );
 
-  const prompt = TREND_ANALYSIS_PROMPT.replace(
+  const prompt = PHARMA_RSS_TREND_ANALYSIS_PROMPT.replace(
     "{json_data}",
     JSON.stringify(tweetsForPrompt, null, 2),
   );
@@ -49,7 +49,7 @@ export async function analyzeTrends(
 
   if (candidate?.finishReason === "SAFETY") {
     throw new UserFacingError(
-      "Geminiのセーフティフィルタで分析結果がブロックされました。ツイート内容を減らして再実行してください。",
+      "Geminiのセーフティフィルタで分析結果がブロックされました。rssMaxItems を減らすなどして再実行してください。",
     );
   }
 

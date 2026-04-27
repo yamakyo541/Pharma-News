@@ -2,29 +2,26 @@ import { describe, it, expect, vi } from "vitest";
 import { fetchUrlContents } from "./url-content.js";
 import type { Config } from "../config.js";
 import type { Settings } from "../settings.js";
+import { settings as appSettings } from "../settings.js";
 import type { RawTweet } from "../types.js";
 
 const mockConfig: Config = {
   JINA_API_KEY: "test-jina",
   GEMINI_API_KEY: "test-gemini",
-  SLACK_BOT_TOKEN: "xoxb-test",
-  SLACK_CHANNEL: "C123",
+  GMAIL_USER: "bot@example.com",
+  GMAIL_APP_PASSWORD: "abcdabcdabcdabcd",
+  GMAIL_TO: "you@example.com",
   USE_SAMPLE_DATA: true,
 };
 
 const baseSettings: Settings = {
-  schedule: { lookbackHours: 24, maxTweets: 100 },
+  ...appSettings,
+  schedule: { ...appSettings.schedule },
   urlContent: {
+    ...appSettings.urlContent,
     enabled: true,
     timeoutMs: 5000,
     parallelism: 5,
-    maxSummaryChars: 200,
-    inputCharsMultiplier: 20,
-  },
-  analysis: {
-    urlSummaryModel: "gemini-2.5-flash",
-    trendAnalysisModel: "gemini-2.5-pro",
-    temperature: 0,
   },
 };
 
@@ -38,7 +35,7 @@ const tweetsNoUrl: RawTweet[] = [
     authorId: "user1",
     text: "URLなしのツイート",
     createdAt: "2026-04-16T10:00:00.000Z",
-    url: "https://x.com/user1/status/1",
+    url: "https://example.com/post/no-url-in-text",
   },
 ];
 
@@ -47,7 +44,7 @@ function makeTweetsWithUrls(...urls: string[]): RawTweet[] {
     authorId: "user1",
     text: `Check out ${u}`,
     createdAt: "2026-04-16T10:00:00.000Z",
-    url: `https://x.com/user1/status/${i + 1}`,
+    url: `https://example.com/post/${i + 1}`,
   }));
 }
 
@@ -75,7 +72,7 @@ describe("fetchUrlContents", () => {
       "fetch",
       vi.fn((input: string | URL | Request, init?: RequestInit) => {
         const url = typeof input === "string" ? input : input.toString();
-        // HEAD展開: 展開後URLとしてそのまま返す（x.com系でないので通過する）
+        // HEAD展開: 展開後URLとしてそのまま返す（除外ドメインでないので通過する）
         if (init?.method === "HEAD") {
           return Promise.resolve({ url });
         }

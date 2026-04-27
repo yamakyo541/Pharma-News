@@ -21,10 +21,10 @@ export function cleanText(text: string): string {
   return s.trim();
 }
 
-const X_HOSTS = new Set(["x.com", "twitter.com", "t.co"]);
+const EXCLUDED_EXPAND_HOSTS = new Set(["x.com", "twitter.com"]);
 
 /**
- * 短縮URLを並列HEAD展開し、x.com/twitter.com/t.co 系を除外した
+ * 短縮URLを並列HEAD展開し、展開後URLのホストが除外対象のものを落とした
  * Map<元の短縮URL, 展開後URL> を返す。
  */
 export async function expandUrls(
@@ -55,7 +55,7 @@ export async function expandUrls(
     if (r.status !== "fulfilled") continue;
     const { originalUrl, expandedUrl } = r.value;
     try {
-      if (!X_HOSTS.has(new URL(expandedUrl).hostname)) {
+      if (!EXCLUDED_EXPAND_HOSTS.has(new URL(expandedUrl).hostname)) {
         mapping.set(originalUrl, expandedUrl);
       }
     } catch {

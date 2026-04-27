@@ -1,5 +1,5 @@
 {
-  "name": "ai-news",
+  "name": "pharma-news",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -14,12 +14,13 @@
   },
   "dependencies": {
     "@google/genai": "^1.1.0",
-    "@slack/web-api": "^7.8.0",
-    "twitter-api-v2": "^1.18.2",
+    "fast-xml-parser": "^4.5.6",
+    "nodemailer": "^8.0.6",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.1"
   },
   "devDependencies": {
+    "@types/nodemailer": "^8.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^3.2.4"

@@ -12,14 +12,6 @@
 
 ## エラー別の対処法
 
-### X API
-
-| 症状 | 原因 | 対処 |
-|---|---|---|
-| `401 Unauthorized` | 4つのキーのいずれかが間違っているか期限切れ | console.x.com → アプリ → キーとトークン → 「OAuth 1.0 キー」のアクセストークンを再生成し、GitHub Secrets を更新 |
-| `429 Too Many Requests` | レート制限に到達 | 15分待機してから再実行。`src/settings.ts` の `maxTweets` を下げる |
-| X API が使えない / 申請が通らない | pay-per-use の Billing 未設定、または申請待ち | X Developer Portal → Billing → Add payment method。申請中は `USE_SAMPLE_DATA=true` のモックルートで動作確認 |
-
 ### Jina Reader
 
 | 症状 | 原因 | 対処 |
@@ -32,19 +24,19 @@
 |---|---|---|
 | `400 API key not valid` | APIキーの誤り | aistudio.google.com で再発行し、GitHub Secrets の `GEMINI_API_KEY` を更新 |
 | `429 Resource exhausted` | Free枠の1日上限超過（Flash 250/day, Pro 100/day） | 明日まで待つ。手動実行は1日1〜2回に抑える |
-| `SAFETY filter` | ツイート内容がセーフティフィルタに抵触 | `maxTweets` を減らす。タイムラインのフォロー先を見直す |
+| `SAFETY filter` | 収集した本文がセーフティフィルタに抵触 | `rssMaxItems` を減らす。ソースの内容を見直す |
 
-### Slack
+### Gmail（メール送信）
 
 | 症状 | 原因 | 対処 |
 |---|---|---|
-| `channel_not_found` | `SLACK_CHANNEL` のIDが間違っている | Slackでチャンネルを右クリック → チャンネル詳細 → 最下部のID（`C`で始まる文字列）をコピーし直す |
-| `not_in_channel` | BotアプリがチャンネルにいないBot | チャンネルで `/invite @あなたのBot名` を実行 |
-| `not_authed` / `invalid_auth` | `SLACK_BOT_TOKEN` が間違っているか期限切れ | api.slack.com → アプリ → OAuth & Permissions → Bot User OAuth Token を再コピー |
+| `Gmail へのメール送信に失敗` / `Invalid login` | `GMAIL_APP_PASSWORD` が誤り、または通常パスワードを入れている | Google アカウント → セキュリティ → 2段階認証を有効化 → アプリパスワードで「メール」用を新規発行し、16文字を空白なしで `GMAIL_APP_PASSWORD` に設定 |
+| 環境変数エラー（GMAIL_TO） | 宛先がメール形式でない、空 | `GMAIL_TO` に有効なアドレスを1件、または `a@x.com,b@x.com` のようにカンマ区切りで指定 |
+| 環境変数エラー（GMAIL_USER） | 送信元がメール形式でない | `GMAIL_USER` は送信に使う Gmail（または Google Workspace の許可されたアドレス）を指定 |
 
 ### その他
 
 | 症状 | 原因 | 対処 |
 |---|---|---|
-| 成功扱い（緑）だが Slack に投稿がない | `maxTweets: 0` や `lookbackHours: 0` の誤設定 | `src/settings.ts` の値を確認 |
+| 成功扱い（緑）だがメールが届かない | 迷惑メールフォルダ、`lookbackHours: 0` の誤設定 | 迷惑メールを確認。`src/settings.ts` の値を確認 |
 | Actions がずっと黄色（実行中） | Jina Reader の大量タイムアウト | `src/settings.ts` の `urlContent.parallelism` を `5` に下げる、または `urlContent.enabled` を `false` にして再実行 |

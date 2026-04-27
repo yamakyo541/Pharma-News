@@ -33,7 +33,7 @@ const validAnalysis: Analysis = {
     {
       title: "GPT-5.5が発表",
       details: ["ネイティブtool use対応"],
-      sources: ["https://x.com/OpenAI/status/123"],
+      sources: ["https://example.com/news/openai-123"],
     },
     {
       title: "第2位トピック",
