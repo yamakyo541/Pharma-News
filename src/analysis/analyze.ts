@@ -1,9 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import {
-  AnalysisSchema,
-  analysisResponseSchema,
-  type Analysis,
-} from "./schema.js";
+import { AnalysisSchema, type Analysis } from "./schema.js";
 import { PHARMA_RSS_TREND_ANALYSIS_PROMPT } from "./prompts.js";
 import type { Config } from "../config.js";
 import type { Settings } from "../settings.js";
@@ -44,13 +40,11 @@ export async function analyzeTrends(
         contents: prompt,
         config: {
           temperature: settings.analysis.temperature,
-          responseMimeType: "application/json",
-          responseSchema: analysisResponseSchema as Record<string, unknown>,
         },
       }),
     settings.resilience,
     isRetryableGeminiCallError,
-    { label: "Gemini Pro（トレンド分析）" },
+    { label: "Gemini（トレンド分析）" },
   );
 
   const candidate = (res as { candidates?: Array<{ finishReason?: string }> })
@@ -67,14 +61,26 @@ export async function analyzeTrends(
     throw new UserFacingError("Geminiから空の応答が返りました。");
   }
 
+  const jsonPayload = extractJsonObject(text);
   try {
-    return AnalysisSchema.parse(JSON.parse(text));
+    return AnalysisSchema.parse(JSON.parse(jsonPayload));
   } catch (cause) {
     throw new UserFacingError(
       "Geminiの応答をパースできませんでした。再実行してみてください。",
       { cause },
     );
   }
+}
+
+/** ```json ... ``` や前後の説明文を除いて JSON オブジェクト文字列だけ取り出す */
+function extractJsonObject(raw: string): string {
+  const t = raw.trim();
+  const fenced = /^```(?:json)?\s*\n?([\s\S]*?)\n?```/im.exec(t);
+  if (fenced?.[1]) return fenced[1].trim();
+  const start = t.indexOf("{");
+  const end = t.lastIndexOf("}");
+  if (start >= 0 && end > start) return t.slice(start, end + 1);
+  return t;
 }
 
 function groupByAuthor(
