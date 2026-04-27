@@ -1,5 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
-import { AnalysisSchema, type Analysis } from "./schema.js";
+import {
+  AnalysisSchema,
+  analysisResponseSchema,
+  type Analysis,
+} from "./schema.js";
 import { PHARMA_RSS_TREND_ANALYSIS_PROMPT } from "./prompts.js";
 import type { Config } from "../config.js";
 import type { Settings } from "../settings.js";
@@ -42,6 +46,8 @@ export async function analyzeTrends(
           contents: prompt,
           config: {
             temperature: settings.analysis.temperature,
+            responseMimeType: "application/json",
+            responseSchema: analysisResponseSchema as Record<string, unknown>,
           },
         }),
       settings.resilience,

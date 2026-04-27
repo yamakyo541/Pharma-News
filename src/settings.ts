@@ -94,12 +94,10 @@ export const settings: Settings = {
     inputCharsMultiplier: 20,
   },
   analysis: {
-    /**
-     * 無料枠で 2.x が limit:0 や 2.5-pro 扱いの 429 になる場合があるため、
-     * 1.5 Flash を既定にする（課金枠や枠に余裕があれば 2.0-flash 等へ変更可）。
-     */
-    urlSummaryModel: "gemini-1.5-flash",
-    trendAnalysisModel: "gemini-1.5-flash",
+    /** 各記事URLの短文要約（呼び出し回数が多いので Flash 推奨） */
+    urlSummaryModel: "gemini-2.5-flash",
+    /** 全体トレンド分析は品質優先で Pro（無料枠で 429 になるときは課金・別キー・Flash へ切替） */
+    trendAnalysisModel: "gemini-2.5-pro",
     temperature: 0,
     geminiMaxParallelRequests: 1,
   },
