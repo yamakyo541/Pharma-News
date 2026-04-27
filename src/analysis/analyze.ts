@@ -33,19 +33,35 @@ export async function analyzeTrends(
     JSON.stringify(tweetsForPrompt, null, 2),
   );
 
-  const res = await withRetry(
-    () =>
-      ai.models.generateContent({
-        model: settings.analysis.trendAnalysisModel,
-        contents: prompt,
-        config: {
-          temperature: settings.analysis.temperature,
-        },
-      }),
-    settings.resilience,
-    isRetryableGeminiCallError,
-    { label: "Gemini（トレンド分析）" },
-  );
+  let res: Awaited<ReturnType<GoogleGenAI["models"]["generateContent"]>>;
+  try {
+    res = await withRetry(
+      () =>
+        ai.models.generateContent({
+          model: settings.analysis.trendAnalysisModel,
+          contents: prompt,
+          config: {
+            temperature: settings.analysis.temperature,
+          },
+        }),
+      settings.resilience,
+      isRetryableGeminiCallError,
+      { label: "Gemini（トレンド分析）" },
+    );
+  } catch (cause) {
+    const msg = String(cause);
+    if (
+      msg.includes("RESOURCE_EXHAUSTED") ||
+      msg.includes('"code":429') ||
+      msg.includes("429")
+    ) {
+      throw new UserFacingError(
+        "Gemini API の利用枠に達したか、この API キーでは無料枠が使えない状態です。Google AI Studio で新しい API キーを発行する・別の Google アカウントを試す・課金（従量課金）を有効にする・しばらく時間をおいて再実行してください。",
+        { cause },
+      );
+    }
+    throw cause;
+  }
 
   const candidate = (res as { candidates?: Array<{ finishReason?: string }> })
     .candidates?.[0];

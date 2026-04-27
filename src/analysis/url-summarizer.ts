@@ -22,7 +22,10 @@ export async function summarizeUrls(
   const summaryCache = new Map<string, string>();
   const entries = [...urlContents.entries()];
 
-  const chunks = chunkArray(entries, settings.urlContent.parallelism);
+  const chunks = chunkArray(
+    entries,
+    Math.max(1, settings.analysis.geminiMaxParallelRequests),
+  );
   for (const chunk of chunks) {
     const results = await Promise.allSettled(
       chunk.map(async ([url, content]) => {
