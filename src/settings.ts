@@ -92,9 +92,12 @@ export const settings: Settings = {
     inputCharsMultiplier: 20,
   },
   analysis: {
-    urlSummaryModel: "gemini-2.5-flash",
-    /** 無料枠で Pro が quota limit 0 になる場合があるため Flash を既定にする（有料・枠余裕なら gemini-2.5-pro 等へ） */
-    trendAnalysisModel: "gemini-2.5-flash",
+    /**
+     * 無料枠では 2.5 系が quota limit 0 や Pro 側のエラーに見えることがあるため、
+     * 2.0 Flash を既定にする（品質を優先する場合は課金枠で 2.5-pro 等を試す）。
+     */
+    urlSummaryModel: "gemini-2.0-flash",
+    trendAnalysisModel: "gemini-2.0-flash",
     temperature: 0,
   },
   resilience: {
