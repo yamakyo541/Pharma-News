@@ -33,6 +33,12 @@ export interface Settings {
     trendAnalysisModel: string;
     temperature: number;
   };
+  /** RSS / Jina / Gemini 呼び出しの共通リトライ（指数バックオフ＋ジッター） */
+  resilience: {
+    maxAttempts: number;
+    baseDelayMs: number;
+    maxDelayMs: number;
+  };
 }
 
 export const settings: Settings = {
@@ -89,5 +95,10 @@ export const settings: Settings = {
     urlSummaryModel: "gemini-2.5-flash",
     trendAnalysisModel: "gemini-2.5-pro",
     temperature: 0,
+  },
+  resilience: {
+    maxAttempts: 3,
+    baseDelayMs: 1_000,
+    maxDelayMs: 8_000,
   },
 };

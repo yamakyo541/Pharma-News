@@ -3,6 +3,11 @@ import type { Settings } from "../settings.js";
 import type { RawTweet } from "../types.js";
 import { extractUrls, expandUrls } from "../utils/post-optimizer.js";
 import { chunkArray } from "../utils/chunk.js";
+import {
+  isRetryableFetchError,
+  isRetryableHttpStatus,
+  withRetry,
+} from "../utils/retry.js";
 
 /**
  * 入力テキスト内URLの本文を Jina Reader で取得する。
@@ -43,36 +48,52 @@ export async function fetchUrlContents(
 
     const results = await Promise.allSettled(
       chunk.map(async ([originalUrl, expandedUrl]) => {
-        const ctl = new AbortController();
-        const timer = setTimeout(
-          () => ctl.abort(),
-          settings.urlContent.timeoutMs,
-        );
         try {
-          const res = await fetch(`https://r.jina.ai/${expandedUrl}`, {
-            headers: {
-              Accept: "text/plain",
-              ...(config.JINA_API_KEY
-                ? { Authorization: `Bearer ${config.JINA_API_KEY}` }
-                : {}),
-            },
-            signal: ctl.signal,
-          });
+          return await withRetry(
+            async () => {
+              const ctl = new AbortController();
+              const timer = setTimeout(
+                () => ctl.abort(),
+                settings.urlContent.timeoutMs,
+              );
+              try {
+                const res = await fetch(`https://r.jina.ai/${expandedUrl}`, {
+                  headers: {
+                    Accept: "text/plain",
+                    ...(config.JINA_API_KEY
+                      ? { Authorization: `Bearer ${config.JINA_API_KEY}` }
+                      : {}),
+                  },
+                  signal: ctl.signal,
+                });
 
-          if (res.status === 402 || res.status === 401) {
-            jina402Detected = true;
-            console.warn(
-              `[Jina] ${res.status} — 無料枠が枯渇しました。URL本文なしで分析を続行します。`,
-            );
-            return { originalUrl, content: undefined };
-          }
-          if (!res.ok) {
-            return { originalUrl, content: undefined };
-          }
-          const text = await res.text();
-          return { originalUrl, content: text };
-        } finally {
-          clearTimeout(timer);
+                if (res.status === 402 || res.status === 401) {
+                  jina402Detected = true;
+                  console.warn(
+                    `[Jina] ${res.status} — 無料枠が枯渇しました。URL本文なしで分析を続行します。`,
+                  );
+                  return { originalUrl, content: undefined };
+                }
+                if (isRetryableHttpStatus(res.status)) {
+                  throw Object.assign(new Error(`Jina HTTP ${res.status}`), {
+                    status: res.status,
+                  });
+                }
+                if (!res.ok) {
+                  return { originalUrl, content: undefined };
+                }
+                const text = await res.text();
+                return { originalUrl, content: text };
+              } finally {
+                clearTimeout(timer);
+              }
+            },
+            settings.resilience,
+            isRetryableFetchError,
+            { label: `Jina ${originalUrl.slice(0, 64)}` },
+          );
+        } catch {
+          return { originalUrl, content: undefined };
         }
       }),
     );

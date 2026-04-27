@@ -5,6 +5,11 @@ import type { Config } from "../config.js";
 import type { Settings } from "../settings.js";
 import type { RawTweet } from "../types.js";
 import { UserFacingError } from "../utils/errors.js";
+import {
+  isRetryableFetchError,
+  isRetryableHttpStatus,
+  withRetry,
+} from "../utils/retry.js";
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -39,7 +44,7 @@ export async function fetchRssAsRawTweets(
   for (const feed of feeds) {
     let items: ParsedRssItem[];
     try {
-      const xml = await fetchRssXml(feed.url, settings.contentSource.rssFetchTimeoutMs);
+      const xml = await fetchRssXml(feed.url, settings);
       items = parseRssItems(xml);
     } catch (cause) {
       console.warn(`[RSS] ${feed.label} の取得をスキップ:`, cause);
@@ -103,23 +108,48 @@ async function loadSampleRssTweets(): Promise<RawTweet[]> {
   return JSON.parse(raw) as RawTweet[];
 }
 
-async function fetchRssXml(
-  url: string,
-  timeoutMs: number,
-): Promise<string> {
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+async function fetchRssXml(url: string, settings: Settings): Promise<string> {
+  const timeoutMs = settings.contentSource.rssFetchTimeoutMs;
+
   try {
-    const res = await fetch(url, {
-      signal: ctl.signal,
-      headers: { Accept: "application/rss+xml, application/xml, text/xml, */*" },
-    });
-    if (!res.ok) {
-      throw new UserFacingError(
-        `RSSフィードの取得に失敗しました（HTTP ${res.status}）。URLが正しいか、認証が必要でないか確認してください。`,
-      );
-    }
-    return await res.text();
+    return await withRetry(
+      async () => {
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), timeoutMs);
+        try {
+          const res = await fetch(url, {
+            signal: ctl.signal,
+            headers: {
+              Accept: "application/rss+xml, application/xml, text/xml, */*",
+            },
+          });
+          if (isRetryableHttpStatus(res.status)) {
+            throw Object.assign(new Error(`RSS HTTP ${res.status}`), {
+              status: res.status,
+            });
+          }
+          if (!res.ok) {
+            throw new UserFacingError(
+              `RSSフィードの取得に失敗しました（HTTP ${res.status}）。URLが正しいか、認証が必要でないか確認してください。`,
+            );
+          }
+          return await res.text();
+        } catch (cause) {
+          if (cause instanceof UserFacingError) throw cause;
+          if ((cause as Error)?.name === "AbortError") {
+            throw Object.assign(new Error("RSS fetch timeout"), {
+              name: "AbortError",
+            });
+          }
+          throw cause;
+        } finally {
+          clearTimeout(timer);
+        }
+      },
+      settings.resilience,
+      isRetryableFetchError,
+      { label: `RSS ${url.slice(0, 72)}` },
+    );
   } catch (cause) {
     if (cause instanceof UserFacingError) throw cause;
     if ((cause as Error)?.name === "AbortError") {
@@ -131,8 +161,6 @@ async function fetchRssXml(
       "RSSフィードの取得中にエラーが発生しました。URLとネットワークを確認してください。",
       { cause },
     );
-  } finally {
-    clearTimeout(timer);
   }
 }
 

@@ -10,13 +10,14 @@ import type { Settings } from "../settings.js";
 import type { EnrichedTweet } from "../types.js";
 import { UserFacingError } from "../utils/errors.js";
 import { cleanText } from "../utils/post-optimizer.js";
+import { isRetryableGeminiCallError, withRetry } from "../utils/retry.js";
 
 export async function analyzeTrends(
   tweets: EnrichedTweet[],
   config: Config,
   settings: Settings,
 ): Promise<Analysis> {
-  console.info("[3b/4] 収集ニュース全体を Gemini Pro で分析中...");
+  console.info("[4/5] 収集ニュース全体を Gemini Pro で分析中...");
   const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
 
   const tweetsForPrompt = Object.entries(groupByAuthor(tweets)).map(
@@ -34,15 +35,21 @@ export async function analyzeTrends(
     JSON.stringify(tweetsForPrompt, null, 2),
   );
 
-  const res = await ai.models.generateContent({
-    model: settings.analysis.trendAnalysisModel,
-    contents: prompt,
-    config: {
-      temperature: settings.analysis.temperature,
-      responseMimeType: "application/json",
-      responseSchema: analysisResponseSchema as Record<string, unknown>,
-    },
-  });
+  const res = await withRetry(
+    () =>
+      ai.models.generateContent({
+        model: settings.analysis.trendAnalysisModel,
+        contents: prompt,
+        config: {
+          temperature: settings.analysis.temperature,
+          responseMimeType: "application/json",
+          responseSchema: analysisResponseSchema as Record<string, unknown>,
+        },
+      }),
+    settings.resilience,
+    isRetryableGeminiCallError,
+    { label: "Gemini Pro（トレンド分析）" },
+  );
 
   const candidate = (res as { candidates?: Array<{ finishReason?: string }> })
     .candidates?.[0];

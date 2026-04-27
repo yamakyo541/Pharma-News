@@ -4,6 +4,7 @@ import type { Settings } from "../settings.js";
 import type { RawTweet, EnrichedTweet } from "../types.js";
 import { extractUrls } from "../utils/post-optimizer.js";
 import { chunkArray } from "../utils/chunk.js";
+import { isRetryableGeminiCallError, withRetry } from "../utils/retry.js";
 import { URL_SUMMARY_PROMPT } from "./prompts.js";
 
 export async function summarizeUrls(
@@ -16,7 +17,7 @@ export async function summarizeUrls(
     return tweets.map((t) => ({ ...t, enrichedText: buildFullText(t) }));
   }
 
-  console.info("[3a/4] 各URLを Gemini Flash で要約中...");
+  console.info("[3/5] 各URLを Gemini Flash で要約中...");
   const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
   const summaryCache = new Map<string, string>();
   const entries = [...urlContents.entries()];
@@ -35,11 +36,17 @@ export async function summarizeUrls(
           truncated,
         );
 
-        const res = await ai.models.generateContent({
-          model: settings.analysis.urlSummaryModel,
-          contents: prompt,
-          config: { temperature: 0 },
-        });
+        const res = await withRetry(
+          () =>
+            ai.models.generateContent({
+              model: settings.analysis.urlSummaryModel,
+              contents: prompt,
+              config: { temperature: 0 },
+            }),
+          settings.resilience,
+          isRetryableGeminiCallError,
+          { label: "Gemini Flash（URL要約）" },
+        );
 
         const text = res.text?.slice(0, settings.urlContent.maxSummaryChars);
         return { url, summary: text ?? "" };
