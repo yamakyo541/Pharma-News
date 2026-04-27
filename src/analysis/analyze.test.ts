@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { UserFacingError } from "../utils/errors.js";
 import type { Settings } from "../settings.js";
+import { settings as appSettings } from "../settings.js";
 import type { Config } from "../config.js";
 import type { EnrichedTweet } from "../types.js";
 
@@ -19,25 +20,16 @@ const { analyzeTrends } = await import("./analyze.js");
 const mockConfig: Config = {
   JINA_API_KEY: "test",
   GEMINI_API_KEY: "test",
-  SLACK_BOT_TOKEN: "xoxb-test",
-  SLACK_CHANNEL: "C123",
+  GMAIL_USER: "bot@example.com",
+  GMAIL_APP_PASSWORD: "abcdabcdabcdabcd",
+  GMAIL_TO: "you@example.com",
   USE_SAMPLE_DATA: true,
 };
 
 const mockSettings: Settings = {
-  schedule: { lookbackHours: 24, maxTweets: 100 },
-  urlContent: {
-    enabled: false,
-    timeoutMs: 5000,
-    parallelism: 5,
-    maxSummaryChars: 200,
-    inputCharsMultiplier: 20,
-  },
-  analysis: {
-    urlSummaryModel: "gemini-2.5-flash",
-    trendAnalysisModel: "gemini-2.5-pro",
-    temperature: 0,
-  },
+  ...appSettings,
+  schedule: { ...appSettings.schedule },
+  urlContent: { ...appSettings.urlContent, enabled: false },
 };
 
 const sampleTweets: EnrichedTweet[] = [
@@ -51,15 +43,25 @@ const sampleTweets: EnrichedTweet[] = [
 ];
 
 const validResponse = {
-  main_news: [
+  daily_overview: ["全体俯瞰1", "全体俯瞰2", "全体俯瞰3"],
+  industry_implications: ["示唆1", "示唆2"],
+  top_topics: [
     {
       title: "Test News",
       details: ["Detail"],
       sources: ["https://x.com/test/status/1"],
     },
+    {
+      title: "Test News 2",
+      details: ["Detail"],
+      sources: ["https://x.com/test/status/2"],
+    },
+    {
+      title: "Test News 3",
+      details: ["Detail"],
+      sources: ["https://x.com/test/status/3"],
+    },
   ],
-  updates: [],
-  tech_trends: [],
 };
 
 describe("analyzeTrends", () => {
@@ -70,8 +72,8 @@ describe("analyzeTrends", () => {
     });
 
     const result = await analyzeTrends(sampleTweets, mockConfig, mockSettings);
-    expect(result.main_news).toHaveLength(1);
-    expect(result.main_news[0]!.title).toBe("Test News");
+    expect(result.top_topics).toHaveLength(3);
+    expect(result.top_topics[0]!.title).toBe("Test News");
   });
 
   it("SAFETY finishReason で UserFacingError をスローする", async () => {

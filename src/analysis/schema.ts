@@ -7,10 +7,17 @@ const TopicSchema = z.object({
   sources: z.array(z.string()),
 });
 
+/** 新着記事の全体俯瞰（3行） */
+const DailyOverviewSchema = z.array(z.string()).length(3);
+
+/** 業界への示唆（2〜3行） */
+const IndustryImplicationSchema = z.array(z.string()).min(2).max(3);
+
+/** 新着記事全体から見た重要トピック（1位〜5位。配列の先頭ほど重要） */
 export const AnalysisSchema = z.object({
-  main_news: z.array(TopicSchema),
-  updates: z.array(TopicSchema),
-  tech_trends: z.array(TopicSchema),
+  daily_overview: DailyOverviewSchema,
+  industry_implications: IndustryImplicationSchema,
+  top_topics: z.array(TopicSchema).min(3).max(5),
 });
 
 export type Analysis = z.infer<typeof AnalysisSchema>;
