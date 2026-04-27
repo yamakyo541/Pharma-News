@@ -17,7 +17,9 @@ export async function analyzeTrends(
   config: Config,
   settings: Settings,
 ): Promise<Analysis> {
-  console.info("[4/5] 収集ニュース全体を Gemini Pro で分析中...");
+  console.info(
+    `[4/5] 収集ニュース全体を Gemini（${settings.analysis.trendAnalysisModel}）で分析中...`,
+  );
   const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
 
   const tweetsForPrompt = Object.entries(groupByAuthor(tweets)).map(

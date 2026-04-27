@@ -93,7 +93,8 @@ export const settings: Settings = {
   },
   analysis: {
     urlSummaryModel: "gemini-2.5-flash",
-    trendAnalysisModel: "gemini-2.5-pro",
+    /** 無料枠で Pro が quota limit 0 になる場合があるため Flash を既定にする（有料・枠余裕なら gemini-2.5-pro 等へ） */
+    trendAnalysisModel: "gemini-2.5-flash",
     temperature: 0,
   },
   resilience: {
