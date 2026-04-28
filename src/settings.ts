@@ -28,6 +28,7 @@ export interface Settings {
     maxSummaryChars: number;
     inputCharsMultiplier: number;
   };
+  /** Gemini: URL要約とトレンド分析で同一 Flash モデル（無料枠向けの既定） */
   analysis: {
     urlSummaryModel: string;
     trendAnalysisModel: string;
@@ -94,10 +95,10 @@ export const settings: Settings = {
     inputCharsMultiplier: 20,
   },
   analysis: {
-    /** 各記事URLの短文要約（呼び出し回数が多いので Flash 推奨） */
+    /** 各記事URLの短文要約 */
     urlSummaryModel: "gemini-2.5-flash",
-    /** 全体トレンド分析は品質優先で Pro（無料枠で 429 になるときは課金・別キー・Flash へ切替） */
-    trendAnalysisModel: "gemini-2.5-pro",
+    /** 全体トレンド分析（要約と同じ Flash に統一） */
+    trendAnalysisModel: "gemini-2.5-flash",
     temperature: 0,
     geminiMaxParallelRequests: 1,
   },

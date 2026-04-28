@@ -17,7 +17,9 @@ export async function summarizeUrls(
     return tweets.map((t) => ({ ...t, enrichedText: buildFullText(t) }));
   }
 
-  console.info("[3/5] 各URLを Gemini Flash で要約中...");
+  console.info(
+    `[3/5] 各URLを Gemini（${settings.analysis.urlSummaryModel}）で要約中...`,
+  );
   const ai = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
   const summaryCache = new Map<string, string>();
   const entries = [...urlContents.entries()];
@@ -48,7 +50,7 @@ export async function summarizeUrls(
             }),
           settings.resilience,
           isRetryableGeminiCallError,
-          { label: "Gemini Flash（URL要約）" },
+          { label: `${settings.analysis.urlSummaryModel}（URL要約）` },
         );
 
         const text = res.text?.slice(0, settings.urlContent.maxSummaryChars);

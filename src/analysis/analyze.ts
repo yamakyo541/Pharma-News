@@ -52,7 +52,7 @@ export async function analyzeTrends(
         }),
       settings.resilience,
       isRetryableGeminiCallError,
-      { label: "Gemini（トレンド分析）" },
+      { label: `${settings.analysis.trendAnalysisModel}（トレンド分析）` },
     );
   } catch (cause) {
     const msg = String(cause);
