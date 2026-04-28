@@ -1,9 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import {
-  AnalysisSchema,
-  analysisResponseSchema,
-  type Analysis,
-} from "./schema.js";
+import { AnalysisSchema, type Analysis } from "./schema.js";
 import { PHARMA_RSS_TREND_ANALYSIS_PROMPT } from "./prompts.js";
 import type { Config } from "../config.js";
 import type { Settings } from "../settings.js";
@@ -46,8 +42,9 @@ export async function analyzeTrends(
           contents: prompt,
           config: {
             temperature: settings.analysis.temperature,
+            // responseSchema は付けない（無料枠で 429 かつエラー本文が gemini-2.5-pro を指す事象への対策。
+            // プロンプトで JSON のみ出力させ、AnalysisSchema.parse で検証する）。
             responseMimeType: "application/json",
-            responseSchema: analysisResponseSchema as Record<string, unknown>,
           },
         }),
       settings.resilience,
