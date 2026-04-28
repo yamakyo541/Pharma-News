@@ -32,6 +32,10 @@ async function main() {
   const config = loadConfig();
   partialRunMetrics.useSampleData = config.USE_SAMPLE_DATA;
 
+  console.info(
+    `[Gemini] urlSummary=${settings.analysis.urlSummaryModel} trendAnalysis=${settings.analysis.trendAnalysisModel}`,
+  );
+
   console.info("[1/5] RSS からニュースを取得中...");
   const tweets = await fetchRssAsRawTweets(config, settings);
   console.info(`→ 記事 ${tweets.length}件`);

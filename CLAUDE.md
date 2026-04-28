@@ -15,7 +15,7 @@ src/
 │   └── url-content.ts   # Jina Reader で URL 本文並列取得
 ├── analysis/
 │   ├── url-summarizer.ts # Gemini Flash で各URL要約
-│   ├── analyze.ts       # Gemini Pro で最終トレンド分析
+│   ├── analyze.ts       # Gemini（settings の trendAnalysisModel）で最終トレンド分析
 │   ├── schema.ts        # zod スキーマ（SSoT）
 │   └── prompts.ts       # プロンプト
 ├── delivery/

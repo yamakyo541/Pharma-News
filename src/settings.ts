@@ -75,7 +75,8 @@ export const settings: Settings = {
       { label: "アステラス ニュース", url: "https://www.astellas.com/jp/system/files/rss/news_ja.xml" },
       { label: "中外製薬 ニュース", url: "https://www.chugai-pharm.co.jp/news/rss.xml" },
     ],
-    rssMaxItems: 20,
+    /** 無料枠: URL要約が記事数ぶん走るため、大きすぎると 429 になりやすい */
+    rssMaxItems: 10,
     rssFetchTimeoutMs: 15_000,
   },
   mailUi: {
@@ -92,7 +93,8 @@ export const settings: Settings = {
     timeoutMs: 10_000,
     parallelism: 10,
     maxSummaryChars: 200,
-    inputCharsMultiplier: 20,
+    /** 要約入力の最大文字数 = maxSummaryChars × 本値。下げると入力トークンが減り無料枠に有利 */
+    inputCharsMultiplier: 12,
   },
   analysis: {
     /** 各記事URLの短文要約 */
@@ -103,8 +105,8 @@ export const settings: Settings = {
     geminiMaxParallelRequests: 1,
   },
   resilience: {
-    maxAttempts: 3,
-    baseDelayMs: 1_000,
-    maxDelayMs: 8_000,
+    maxAttempts: 4,
+    baseDelayMs: 2_000,
+    maxDelayMs: 20_000,
   },
 };
