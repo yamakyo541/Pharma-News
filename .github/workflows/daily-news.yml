@@ -31,9 +31,10 @@ jobs:
 
       - run: npm ci
 
+      # schedule では workflow_dispatch の inputs が無い。inputs.* だけだと環境や GHA の版で挙動がブレるため明示する。
       - run: npm start
         env:
-          USE_SAMPLE_DATA: ${{ inputs.use_sample_data }}
+          USE_SAMPLE_DATA: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.use_sample_data == 'true' && 'true' || 'false' }}
           JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}

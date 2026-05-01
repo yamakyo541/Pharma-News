@@ -65,7 +65,7 @@ export async function fetchRssAsRawTweets(
   return tweets.slice(0, settings.contentSource.rssMaxItems);
 }
 
-function normalizeRssItems(
+export function normalizeRssItems(
   items: ParsedRssItem[],
   label: string,
   cutoff: Date,
@@ -74,10 +74,15 @@ function normalizeRssItems(
   for (const raw of items) {
     const item = raw as ParsedRssItem & { guid?: unknown };
     const pubStr = normalizeTextField(item.pubDate);
-    const createdAt = pubStr
-      ? new Date(pubStr).toISOString()
-      : new Date().toISOString();
-    if (Number.isNaN(new Date(createdAt).getTime())) continue;
+    // Invalid Date では toISOString() が RangeError になるため、必ず getTime() で判定してから変換する
+    let createdAt: string;
+    if (pubStr) {
+      const parsed = new Date(pubStr);
+      if (Number.isNaN(parsed.getTime())) continue;
+      createdAt = parsed.toISOString();
+    } else {
+      createdAt = new Date().toISOString();
+    }
     if (new Date(createdAt) < cutoff) continue;
 
     const link =

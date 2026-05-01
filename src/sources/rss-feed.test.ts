@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseRssItems } from "./rss-feed.js";
+import { normalizeRssItems, parseRssItems } from "./rss-feed.js";
 
 describe("parseRssItems", () => {
   it("RSS 2.0 の item を配列として解釈する", () => {
@@ -39,5 +39,25 @@ describe("parseRssItems", () => {
     const items = parseRssItems(xml);
     expect(items).toHaveLength(1);
     expect(items[0]!.link).toBe("https://example.com/one");
+  });
+});
+
+describe("normalizeRssItems", () => {
+  it("不正な pubDate の item はスキップし toISOString で落ちない", () => {
+    const cutoff = new Date("2020-01-01T00:00:00.000Z");
+    const out = normalizeRssItems(
+      [
+        { title: "壊れ日付", link: "https://example.com/bad", pubDate: "not-a-date" },
+        {
+          title: "正常",
+          link: "https://example.com/good",
+          pubDate: "Mon, 27 Apr 2026 10:00:00 GMT",
+        },
+      ],
+      "Test",
+      cutoff,
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]!.url).toBe("https://example.com/good");
   });
 });

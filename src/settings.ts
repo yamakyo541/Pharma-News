@@ -48,7 +48,10 @@ export const settings: Settings = {
   contentSource: {
     rssFeeds: [
       // 国内製薬ニュース（5）
-      { label: "ミクスOnline", url: "https://www.mixonline.jp/rss/mixonline.xml" },
+      {
+        label: "ミクスOnline",
+        url: "https://www.mixonline.jp/DesktopModules/MixOnline_Rss/MixOnlinerss.aspx?rssmode=3",
+      },
       { label: "AnswersNews", url: "https://answers.ten-navi.com/pharmanews/feed/" },
       { label: "薬事日報", url: "https://www.yakuji.co.jp/feed/" },
       { label: "日刊薬業（購読URLを設定）", url: "" },
