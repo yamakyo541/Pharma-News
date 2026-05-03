@@ -5,6 +5,7 @@ import type { Config } from "../config.js";
 import type { Settings } from "../settings.js";
 import type { RawTweet } from "../types.js";
 import { UserFacingError } from "../utils/errors.js";
+import { canonicalUrlForState } from "../utils/url-canonical.js";
 import {
   isRetryableFetchError,
   isRetryableHttpStatus,
@@ -16,20 +17,114 @@ const parser = new XMLParser({
   trimValues: true,
 });
 
+export type RssFeedFetchFailure = {
+  label: string;
+  message: string;
+};
+
+export type RssFetchStats = {
+  configuredFeedCount: number;
+  fetchAttemptCount: number;
+  fetchSuccessCount: number;
+  fetchFailures: RssFeedFetchFailure[];
+};
+
+export type RssFetchResult = {
+  tweets: RawTweet[];
+  stats: RssFetchStats;
+};
+
+export function applyRssCategorySelection(
+  tweets: RawTweet[],
+  settings: Settings,
+): RawTweet[] {
+  const maxTotal = settings.contentSource.rssMaxItems;
+  const caps = settings.contentSource.rssCategoryCaps;
+  const sorted = [...tweets].sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  if (!caps || Object.keys(caps).length === 0) {
+    return sorted.slice(0, maxTotal);
+  }
+
+  const picked = new Set<string>();
+  const counts: Record<string, number> = {};
+  const out: RawTweet[] = [];
+
+  const keyOf = (t: RawTweet) => canonicalUrlForState(t.url);
+
+  const tryAdd = (t: RawTweet, ignoreCategory: boolean): boolean => {
+    if (out.length >= maxTotal) return false;
+    const k = keyOf(t);
+    if (picked.has(k)) return false;
+    const cat = t.category ?? "other";
+    if (!ignoreCategory) {
+      const cap = caps[cat];
+      if (cap !== undefined && (counts[cat] ?? 0) >= cap) {
+        return false;
+      }
+    }
+    out.push(t);
+    picked.add(k);
+    if (!ignoreCategory && caps[cat] !== undefined) {
+      counts[cat] = (counts[cat] ?? 0) + 1;
+    }
+    return true;
+  };
+
+  for (const t of sorted) {
+    tryAdd(t, false);
+  }
+  if (out.length < maxTotal) {
+    for (const t of sorted) {
+      tryAdd(t, true);
+    }
+  }
+  return out;
+}
+
+function mergeTweetByCanonicalUrl(
+  map: Map<string, RawTweet>,
+  tweet: RawTweet,
+): void {
+  const key = canonicalUrlForState(tweet.url);
+  const existing = map.get(key);
+  if (
+    !existing ||
+    new Date(tweet.createdAt).getTime() >
+      new Date(existing.createdAt).getTime()
+  ) {
+    map.set(key, tweet);
+  }
+}
+
 export async function fetchRssAsRawTweets(
   config: Config,
   settings: Settings,
-): Promise<RawTweet[]> {
+): Promise<RssFetchResult> {
   if (config.USE_SAMPLE_DATA) {
-    return loadSampleRssTweets();
+    const tweets = await loadSampleRssTweets();
+    return {
+      tweets,
+      stats: {
+        configuredFeedCount: 0,
+        fetchAttemptCount: 0,
+        fetchSuccessCount: 1,
+        fetchFailures: [],
+      },
+    };
   }
 
   const feeds = settings.contentSource.rssFeeds
     .map((feed) => ({
       label: feed.label.trim() || "RSS",
       url: feed.url.trim(),
+      category: feed.category,
+      maxItems: feed.maxItems,
     }))
     .filter((feed) => feed.url.length > 0);
+
   if (feeds.length === 0) {
     throw new UserFacingError(
       "RSS取得が有効ですが contentSource.rssFeeds が空です。src/settings.ts に購読用のRSSのURLを1件以上設定してください。",
@@ -40,29 +135,58 @@ export async function fetchRssAsRawTweets(
     Date.now() - settings.schedule.lookbackHours * 60 * 60 * 1000,
   );
 
+  const stats: RssFetchStats = {
+    configuredFeedCount: feeds.length,
+    fetchAttemptCount: 0,
+    fetchSuccessCount: 0,
+    fetchFailures: [],
+  };
+
   const tweetsByUrl = new Map<string, RawTweet>();
+
   for (const feed of feeds) {
+    stats.fetchAttemptCount += 1;
     let items: ParsedRssItem[];
     try {
       const xml = await fetchRssXml(feed.url, settings);
       items = parseRssItems(xml);
+      stats.fetchSuccessCount += 1;
     } catch (cause) {
+      const message =
+        cause instanceof Error ? cause.message : String(cause);
       console.warn(`[RSS] ${feed.label} の取得をスキップ:`, cause);
+      stats.fetchFailures.push({ label: feed.label, message });
       continue;
     }
-    const normalized = normalizeRssItems(items, feed.label, cutoff);
+
+    let normalized = normalizeRssItems(items, feed.label, cutoff).map(
+      (t) => ({
+        ...t,
+        ...(feed.category ? { category: feed.category } : {}),
+      }),
+    );
+    normalized.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    const perFeedCap =
+      feed.maxItems ?? settings.contentSource.rssMaxItemsPerFeed;
+    if (typeof perFeedCap === "number" && Number.isFinite(perFeedCap)) {
+      normalized = normalized.slice(0, Math.max(0, perFeedCap));
+    }
+
     for (const tweet of normalized) {
-      if (!tweetsByUrl.has(tweet.url)) {
-        tweetsByUrl.set(tweet.url, tweet);
-      }
+      mergeTweetByCanonicalUrl(tweetsByUrl, tweet);
     }
   }
 
-  const tweets = [...tweetsByUrl.values()];
-  tweets.sort(
+  const merged = [...tweetsByUrl.values()].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
-  return tweets.slice(0, settings.contentSource.rssMaxItems);
+  const tweets = applyRssCategorySelection(merged, settings);
+
+  return { tweets, stats };
 }
 
 export function normalizeRssItems(

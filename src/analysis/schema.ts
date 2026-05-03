@@ -1,10 +1,16 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
+const TopicDetailSchema = z.object({
+  text: z.string(),
+  /** 当該 detail の根拠となった入力記事の URL（https） */
+  source_url: z.string().url(),
+});
+
 const TopicSchema = z.object({
   title: z.string(),
-  details: z.array(z.string()).max(3),
-  sources: z.array(z.string()),
+  details: z.array(TopicDetailSchema).min(1).max(3),
+  sources: z.array(z.string().url()),
 });
 
 /** 新着記事の全体俯瞰（3行） */

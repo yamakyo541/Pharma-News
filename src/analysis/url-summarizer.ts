@@ -6,6 +6,13 @@ import { extractUrls } from "../utils/post-optimizer.js";
 import { chunkArray } from "../utils/chunk.js";
 import { isRetryableGeminiCallError, withRetry } from "../utils/retry.js";
 import { URL_SUMMARY_PROMPT } from "./prompts.js";
+import {
+  getCachedSummary,
+  loadUrlSummaryCache,
+  pruneUrlSummaryCache,
+  saveUrlSummaryCache,
+  setCachedSummary,
+} from "../utils/url-summary-cache.js";
 
 export async function summarizeUrls(
   tweets: RawTweet[],
@@ -24,6 +31,17 @@ export async function summarizeUrls(
   const summaryCache = new Map<string, string>();
   const entries = [...urlContents.entries()];
 
+  const cacheCfg = settings.urlSummaryCache;
+  let diskCache: Awaited<ReturnType<typeof loadUrlSummaryCache>> | null = null;
+  if (cacheCfg?.enabled) {
+    diskCache = await loadUrlSummaryCache(cacheCfg.filePath);
+    pruneUrlSummaryCache(
+      diskCache,
+      cacheCfg.maxAgeDays * 86_400_000,
+      cacheCfg.maxEntries,
+    );
+  }
+
   const chunks = chunkArray(
     entries,
     Math.max(1, settings.analysis.geminiMaxParallelRequests),
@@ -31,6 +49,14 @@ export async function summarizeUrls(
   for (const chunk of chunks) {
     const results = await Promise.allSettled(
       chunk.map(async ([url, content]) => {
+        const fromDisk =
+          diskCache && cacheCfg
+            ? getCachedSummary(diskCache, url, cacheCfg.maxAgeDays * 86_400_000)
+            : undefined;
+        if (fromDisk) {
+          return { url, summary: fromDisk.slice(0, settings.urlContent.maxSummaryChars) };
+        }
+
         const truncated = content.slice(
           0,
           settings.urlContent.maxSummaryChars *
@@ -54,7 +80,11 @@ export async function summarizeUrls(
         );
 
         const text = res.text?.slice(0, settings.urlContent.maxSummaryChars);
-        return { url, summary: text ?? "" };
+        const summary = text ?? "";
+        if (diskCache && cacheCfg && summary) {
+          setCachedSummary(diskCache, url, summary);
+        }
+        return { url, summary };
       }),
     );
 
@@ -63,6 +93,15 @@ export async function summarizeUrls(
         summaryCache.set(r.value.url, r.value.summary);
       }
     }
+  }
+
+  if (diskCache && cacheCfg?.enabled) {
+    pruneUrlSummaryCache(
+      diskCache,
+      cacheCfg.maxAgeDays * 86_400_000,
+      cacheCfg.maxEntries,
+    );
+    await saveUrlSummaryCache(cacheCfg.filePath, diskCache);
   }
 
   console.info(`→ URL要約完了: ${summaryCache.size}件`);
@@ -86,4 +125,3 @@ function buildFullText(tweet: RawTweet): string {
   }
   return text;
 }
-

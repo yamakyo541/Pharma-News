@@ -50,6 +50,8 @@ describe("github-job-summary", () => {
     const text = readFileSync(summaryFile, "utf-8");
     expect(text).toContain("Pharma News");
     expect(text).toContain("5");
+    expect(text).toContain("窓内");
+    expect(text).toContain("新着");
     expect(text).toContain("メール送信まで完了");
   });
 

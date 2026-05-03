@@ -34,6 +34,9 @@ const mockSettings: Settings = {
     timeoutMs: 5000,
     parallelism: 5,
   },
+  urlSummaryCache: appSettings.urlSummaryCache
+    ? { ...appSettings.urlSummaryCache, enabled: false }
+    : undefined,
 };
 
 const sampleTweets: RawTweet[] = [

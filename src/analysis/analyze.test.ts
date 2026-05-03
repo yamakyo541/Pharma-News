@@ -48,17 +48,23 @@ const validResponse = {
   top_topics: [
     {
       title: "Test News",
-      details: ["Detail"],
+      details: [
+        { text: "Detail", source_url: "https://example.com/news/ai-1" },
+      ],
       sources: ["https://example.com/news/ai-1"],
     },
     {
       title: "Test News 2",
-      details: ["Detail"],
+      details: [
+        { text: "Detail", source_url: "https://example.com/news/ai-2" },
+      ],
       sources: ["https://example.com/news/ai-2"],
     },
     {
       title: "Test News 3",
-      details: ["Detail"],
+      details: [
+        { text: "Detail", source_url: "https://example.com/news/ai-3" },
+      ],
       sources: ["https://example.com/news/ai-3"],
     },
   ],

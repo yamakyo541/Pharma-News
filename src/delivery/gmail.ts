@@ -70,7 +70,7 @@ function appendRankedTopicsText(
   items.forEach((topic, i) => {
     lines.push(`■ ${i + 1}. ${topic.title}`, "");
     for (const d of topic.details) {
-      lines.push(d, "");
+      lines.push(`・${d.text}`, `  出典: ${d.source_url}`, "");
     }
     if (topic.sources.length > 0) {
       lines.push("参考:", ...topic.sources, "");
@@ -108,9 +108,13 @@ function appendRankedTopicsHtml(
     const rankedTitle = `${i + 1}. ${topic.title}`;
     parts.push(`<h3 style="font-size:1rem;margin-bottom:0.25rem;">${escapeHtml(rankedTitle)}</h3>`);
     if (topic.details.length > 0) {
-      parts.push(
-        `<ul style="margin-top:0;">${topic.details.map((d) => `<li>${escapeHtml(d)}</li>`).join("")}</ul>`,
-      );
+      const detailLis = topic.details
+        .map((d) => {
+          const href = escapeAttr(d.source_url);
+          return `<li>${escapeHtml(d.text)} <a href="${href}" style="font-size:0.875rem;">（出典）</a></li>`;
+        })
+        .join("");
+      parts.push(`<ul style="margin-top:0;">${detailLis}</ul>`);
     }
     if (topic.sources.length > 0) {
       const links = topic.sources

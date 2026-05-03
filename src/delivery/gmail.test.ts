@@ -32,17 +32,32 @@ const validAnalysis: Analysis = {
   top_topics: [
     {
       title: "GPT-5.5が発表",
-      details: ["ネイティブtool use対応"],
+      details: [
+        {
+          text: "ネイティブtool use対応",
+          source_url: "https://example.com/news/openai-123",
+        },
+      ],
       sources: ["https://example.com/news/openai-123"],
     },
     {
       title: "第2位トピック",
-      details: ["補足"],
+      details: [
+        {
+          text: "補足",
+          source_url: "https://example.com/news/openai-456",
+        },
+      ],
       sources: [],
     },
     {
       title: "第3位トピック",
-      details: ["補足"],
+      details: [
+        {
+          text: "補足",
+          source_url: "https://example.com/news/openai-789",
+        },
+      ],
       sources: [],
     },
   ],
@@ -70,6 +85,8 @@ describe("sendDigestEmail", () => {
     expect(arg.subject).toMatch(/^【製薬ニュース】 \d{4}-\d{2}-\d{2} 重要トピック3件$/);
     expect(arg.html).toContain("GPT-5.5");
     expect(arg.text).toContain("GPT-5.5");
+    expect(arg.html).toContain("openai-123");
+    expect(arg.text).toContain("出典: https://example.com/news/openai-123");
     expect(arg.html).toContain("今日の全体俯瞰");
     expect(arg.text).toContain("--- 今日の示唆 ---");
     expect(arg.html).toContain("1. GPT-5.5が発表");

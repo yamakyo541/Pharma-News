@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { normalizeRssItems, parseRssItems } from "./rss-feed.js";
+import {
+  applyRssCategorySelection,
+  normalizeRssItems,
+  parseRssItems,
+} from "./rss-feed.js";
+import type { Settings } from "../settings.js";
 
 describe("parseRssItems", () => {
   it("RSS 2.0 の item を配列として解釈する", () => {
@@ -59,5 +64,81 @@ describe("normalizeRssItems", () => {
     );
     expect(out).toHaveLength(1);
     expect(out[0]!.url).toBe("https://example.com/good");
+  });
+});
+
+describe("applyRssCategorySelection", () => {
+  const baseSettings = {
+    contentSource: {
+      rssFeeds: [],
+      rssMaxItems: 3,
+      rssFetchTimeoutMs: 15_000,
+      rssCategoryCaps: { a: 1, b: 2 },
+    },
+    mailUi: {
+      senderDisplayName: "",
+      emailSubjectPrefix: "",
+      digestHeading: "",
+      topTopicsSectionHeadingPrefix: "",
+    },
+    schedule: { lookbackHours: 24 },
+    urlContent: {
+      enabled: true,
+      timeoutMs: 1,
+      parallelism: 1,
+      maxSummaryChars: 1,
+      inputCharsMultiplier: 1,
+    },
+    analysis: {
+      urlSummaryModel: "",
+      trendAnalysisModel: "",
+      temperature: 0,
+      geminiMaxParallelRequests: 1,
+    },
+    resilience: {
+      maxAttempts: 1,
+      baseDelayMs: 1,
+      maxDelayMs: 1,
+    },
+  } satisfies Settings;
+
+  it("カテゴリ上限を守りつつ不足分を他カテゴリで埋める", () => {
+    const tweets = [
+      {
+        authorId: "x",
+        text: "t",
+        createdAt: "2026-04-27T12:00:00.000Z",
+        url: "https://example.com/1",
+        category: "a",
+      },
+      {
+        authorId: "x",
+        text: "t",
+        createdAt: "2026-04-27T11:00:00.000Z",
+        url: "https://example.com/2",
+        category: "a",
+      },
+      {
+        authorId: "y",
+        text: "t",
+        createdAt: "2026-04-27T10:00:00.000Z",
+        url: "https://example.com/3",
+        category: "b",
+      },
+      {
+        authorId: "y",
+        text: "t",
+        createdAt: "2026-04-27T09:00:00.000Z",
+        url: "https://example.com/4",
+        category: "b",
+      },
+    ];
+    const out = applyRssCategorySelection(tweets, baseSettings);
+    expect(out).toHaveLength(3);
+    expect(out.map((t) => t.url)).toEqual([
+      "https://example.com/1",
+      "https://example.com/3",
+      "https://example.com/4",
+    ]);
   });
 });

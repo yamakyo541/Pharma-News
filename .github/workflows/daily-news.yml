@@ -29,6 +29,13 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
+      # 配信済みURL・URL要約キャッシュを前回実行から復元（同一 artifact は別 run から取れないため cache を使用）
+      - uses: actions/cache@v4
+        id: pharma-local-cache
+        with:
+          path: .cache
+          key: pharma-news-local-cache-${{ github.ref_name }}-v1
+
       - run: npm ci
 
       # schedule では workflow_dispatch の inputs が無い。inputs.* だけだと環境や GHA の版で挙動がブレるため明示する。
