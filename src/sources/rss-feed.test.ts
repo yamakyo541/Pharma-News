@@ -46,6 +46,23 @@ describe("parseRssItems", () => {
     expect(items[0]!.link).toBe("https://example.com/one");
   });
 
+  it("description 内の実体参照が多い RSS 2.0 も解析できる（既定1000回上限を超えない設定）", () => {
+    // CDATA 内は実体参照として展開されないため、要素テキストに &amp; を並べる
+    const many = "&amp;".repeat(1200);
+    const xml = `<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item>
+    <title>多実体参照</title>
+    <link>https://example.com/many-entities</link>
+    <pubDate>Mon, 27 Apr 2026 12:00:00 GMT</pubDate>
+    <description>${many}</description>
+  </item>
+</channel></rss>`;
+    const items = parseRssItems(xml);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.link).toBe("https://example.com/many-entities");
+  });
+
   it("RSS 1.0（rdf:RDF）の item を解釈し dc:date を pubDate 相当として返す", () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"

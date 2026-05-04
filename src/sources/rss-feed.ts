@@ -15,6 +15,13 @@ import {
 const parser = new XMLParser({
   ignoreAttributes: false,
   trimValues: true,
+  // WHO 等は description 内の HTML 実体参照が非常に多く、既定の展開上限（1000）で失敗する
+  processEntities: {
+    enabled: true,
+    maxTotalExpansions: 200_000,
+    maxExpandedLength: 2_000_000,
+    maxEntitySize: 50_000,
+  },
 });
 
 export type RssFeedFetchFailure = {

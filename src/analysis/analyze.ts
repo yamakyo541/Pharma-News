@@ -63,6 +63,14 @@ export async function analyzeTrends(
         { cause },
       );
     }
+    if (
+      /\b503\b|UNAVAILABLE|"code"\s*:\s*503|high demand/i.test(msg)
+    ) {
+      throw new UserFacingError(
+        "Gemini API が一時的に混雑しています（503 / UNAVAILABLE）。数分〜数十分おいて再実行するか、別の時間帯にワークフローを走らせてください。",
+        { cause },
+      );
+    }
     throw cause;
   }
 

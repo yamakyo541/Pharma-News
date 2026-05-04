@@ -47,6 +47,20 @@ describe("isRetryableGeminiCallError", () => {
       ),
     ).toBe(true);
   });
+
+  it("ネストした error.code が 503 のオブジェクトは再試行する", () => {
+    expect(
+      isRetryableGeminiCallError({
+        error: { code: 503, status: "UNAVAILABLE", message: "high demand" },
+      }),
+    ).toBe(true);
+  });
+
+  it("Error の cause に JSON で code:503 が載る場合は再試行する", () => {
+    const e = new Error("API error");
+    e.cause = '{"error":{"code":503,"status":"UNAVAILABLE"}}';
+    expect(isRetryableGeminiCallError(e)).toBe(true);
+  });
 });
 
 describe("backoffDelayMs", () => {

@@ -14,8 +14,37 @@ function sleep(ms: number): Promise<void> {
 
 function getErrorStatus(error: unknown): number | undefined {
   if (!error || typeof error !== "object") return undefined;
-  const s = (error as { status?: unknown }).status;
-  return typeof s === "number" ? s : undefined;
+  const e = error as Record<string, unknown>;
+  const direct = e.status;
+  if (typeof direct === "number" && Number.isFinite(direct)) return direct;
+
+  // @google/genai / REST が `{ error: { code: 503, status: "UNAVAILABLE" } }` 形式で返す場合
+  const nested = e.error;
+  if (nested && typeof nested === "object") {
+    const n = nested as Record<string, unknown>;
+    const code = n.code;
+    if (typeof code === "number" && Number.isFinite(code)) return code;
+    if (typeof code === "string" && /^\d{3}$/.test(code)) return Number(code);
+  }
+  return undefined;
+}
+
+/** Gemini 再試行判定用に、message / cause / オブジェクト本体をつなぐ */
+function geminiErrorText(error: unknown): string {
+  const parts: string[] = [];
+  if (error instanceof Error) {
+    parts.push(error.message);
+    if (error.cause !== undefined) parts.push(String(error.cause));
+  } else if (error && typeof error === "object") {
+    try {
+      parts.push(JSON.stringify(error));
+    } catch {
+      parts.push(String(error));
+    }
+  } else {
+    parts.push(String(error));
+  }
+  return parts.join(" ");
 }
 
 /** fetch 系・RSS・Jina 向け */
@@ -48,7 +77,7 @@ export function isRetryableGeminiCallError(error: unknown): boolean {
   if (error instanceof UserFacingError) return false;
   const status = getErrorStatus(error);
   if (status !== undefined && isRetryableHttpStatus(status)) return true;
-  const msg = error instanceof Error ? error.message : String(error);
+  const msg = geminiErrorText(error);
   if (
     /429|50[0-4]|UNAVAILABLE|DEADLINE_EXCEEDED|RESOURCE_EXHAUSTED|INTERNAL/i.test(
       msg,
@@ -56,6 +85,8 @@ export function isRetryableGeminiCallError(error: unknown): boolean {
   ) {
     return true;
   }
+  // JSON 本文だけが message / cause に載るケース（"code":503）
+  if (/"code"\s*:\s*(408|429|5\d{2})\b/.test(msg)) return true;
   return isRetryableFetchError(error);
 }
 
