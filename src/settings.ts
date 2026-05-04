@@ -73,11 +73,17 @@ export interface Settings {
 }
 
 const domestic = "domestic";
-const overseas = "overseas";
 const gov = "gov";
 
 export const settings: Settings = {
   contentSource: {
+    /**
+     * 編集方針（最善案の前提）
+     * - 一次ソースは「国内専門メディア + 日・当局・主要国際当局」。海外英語メディアは重複・コストが大きいため除外。
+     * - 1 日の分析対象は件数を抑え（rssMaxItems）、重要トピックに Jina/Gemini を集中させる。
+     * - 平日朝バッチの前後で取りこぼしが出にくいよう lookback を 48h。
+     * - 日刊薬業・日経メディカルは購読 RSS の URL を入れると国内の網羅が一段上がる（空の行は自動スキップ）。
+     */
     rssFeeds: [
       // 国内製薬ニュース（5）
       {
@@ -98,14 +104,7 @@ export const settings: Settings = {
       { label: "日刊薬業（購読URLを設定）", url: "", category: domestic },
       { label: "日経メディカル（購読URLを設定）", url: "", category: domestic },
 
-      // 海外製薬ニュース（5）
-      { label: "Fierce Pharma", url: "https://www.fiercepharma.com/rss/xml", category: overseas },
-      { label: "Endpoints News", url: "https://endpts.com/feed/", category: overseas },
-      { label: "PharmaTimes", url: "https://pharmatimes.com/feed/", category: overseas },
-      { label: "STAT", url: "https://www.statnews.com/feed/", category: overseas },
-      { label: "BioPharma Dive", url: "https://www.biopharmadive.com/feeds/news/", category: overseas },
-
-      // 政策・薬価（5）— 公式の XML パス変更が多いため、取得できた URL（RSS 2.0 / RDF）に更新
+      // 政策・国際当局（5）— 国内メディアが薄い承認・通知・国際規制を補完
       {
         label: "厚生労働省 新着（RSS）",
         url: "https://www.mhlw.go.jp/stf/news.rdf",
@@ -124,16 +123,17 @@ export const settings: Settings = {
         category: gov,
       },
     ],
-    /** 無料枠: URL要約が記事数ぶん走るため、大きすぎると 429 になりやすい */
-    rssMaxItems: 10,
+    /**
+     * 最終的に分析する記事本数。Jina・Gemini（URL 要約）回数に直結するため 8 件に抑える。
+     */
+    rssMaxItems: 8,
     rssFetchTimeoutMs: 15_000,
-    /** 1フィードあたり先に取り込む上限（その後にURL重複排除・カテゴリミックス） */
-    rssMaxItemsPerFeed: 4,
-    /** 最終リストに入るカテゴリ別の上限。足りない場合は枠まで他カテゴリで埋める */
+    /** 1 フィードから先に取り込む上限。小さくするとノイズ削減・マージ前の重複が減る */
+    rssMaxItemsPerFeed: 3,
+    /** 国内を厚め、当局で承認・政策・国際規制を担保（合計 = rssMaxItems） */
     rssCategoryCaps: {
       [domestic]: 5,
-      [overseas]: 3,
-      [gov]: 2,
+      [gov]: 3,
     },
   },
   mailUi: {
@@ -143,12 +143,14 @@ export const settings: Settings = {
     topTopicsSectionHeadingPrefix: "重要トピック TOP",
   },
   schedule: {
-    lookbackHours: 24,
+    /** 平日朝ジョブでも金曜〜日曜の新着を拾いやすい幅 */
+    lookbackHours: 48,
   },
   urlContent: {
     enabled: true,
     timeoutMs: 10_000,
-    parallelism: 10,
+    /** 海外メディア削除に伴いバーストをやや抑え、Jina 側の負荷を平準化 */
+    parallelism: 8,
     maxSummaryChars: 200,
     /** 要約入力の最大文字数 = maxSummaryChars × 本値。下げると入力トークンが減り無料枠に有利 */
     inputCharsMultiplier: 12,
