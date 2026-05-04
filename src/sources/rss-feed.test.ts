@@ -45,6 +45,27 @@ describe("parseRssItems", () => {
     expect(items).toHaveLength(1);
     expect(items[0]!.link).toBe("https://example.com/one");
   });
+
+  it("RSS 1.0（rdf:RDF）の item を解釈し dc:date を pubDate 相当として返す", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns="http://purl.org/rss/1.0/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel rdf:about="https://example.com/feed">
+    <title>Test RDF</title>
+    <link>https://example.com/</link>
+  </channel>
+  <item>
+    <title>RDF記事</title>
+    <link>https://example.com/rdf-1</link>
+    <dc:date>2026-04-27T12:00:00+09:00</dc:date>
+  </item>
+</rdf:RDF>`;
+    const items = parseRssItems(xml);
+    expect(items).toHaveLength(1);
+    expect(items[0]!.link).toBe("https://example.com/rdf-1");
+    expect(items[0]!.pubDate).toBe("2026-04-27T12:00:00+09:00");
+  });
 });
 
 describe("normalizeRssItems", () => {

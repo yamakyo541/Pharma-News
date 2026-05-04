@@ -75,7 +75,6 @@ export interface Settings {
 const domestic = "domestic";
 const overseas = "overseas";
 const gov = "gov";
-const ir = "ir";
 
 export const settings: Settings = {
   contentSource: {
@@ -106,27 +105,24 @@ export const settings: Settings = {
       { label: "STAT", url: "https://www.statnews.com/feed/", category: overseas },
       { label: "BioPharma Dive", url: "https://www.biopharmadive.com/feeds/news/", category: overseas },
 
-      // 政策・薬価（5）
-      { label: "厚生労働省 報道発表", url: "https://www.mhlw.go.jp/stf/houdou/houdou_list.xml", category: gov },
-      { label: "PMDA 新着情報", url: "https://www.pmda.go.jp/rss/0001.xml", category: gov },
-      { label: "内閣官房 報道発表", url: "https://www.cas.go.jp/rss/news.xml", category: gov },
-      { label: "WHO News", url: "https://www.who.int/feeds/entity/mediacentre/news/en/rss.xml", category: gov },
+      // 政策・薬価（5）— 公式の XML パス変更が多いため、取得できた URL（RSS 2.0 / RDF）に更新
       {
-        label: "FDA Newsroom",
-        url: "https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-announcements/rss.xml",
+        label: "厚生労働省 新着（RSS）",
+        url: "https://www.mhlw.go.jp/stf/news.rdf",
         category: gov,
       },
-
-      // 企業IR/プレス（5）
-      { label: "武田薬品 プレス", url: "https://www.takeda.com/jp/newsroom/rss/", category: ir },
-      { label: "第一三共 ニュース", url: "https://www.daiichisankyo.co.jp/rss/news.xml", category: ir },
-      { label: "エーザイ ニュース", url: "https://www.eisai.co.jp/rss/news.xml", category: ir },
+      { label: "PMDA 新着情報", url: "https://www.pmda.go.jp/rss_008.xml", category: gov },
       {
-        label: "アステラス ニュース",
-        url: "https://www.astellas.com/jp/system/files/rss/news_ja.xml",
-        category: ir,
+        label: "内閣府 報道・新着（RSS）",
+        url: "https://www.cao.go.jp/rss/news.rdf",
+        category: gov,
       },
-      { label: "中外製薬 ニュース", url: "https://www.chugai-pharm.co.jp/news/rss.xml", category: ir },
+      { label: "WHO News", url: "https://www.who.int/rss-feeds/news-english.xml", category: gov },
+      {
+        label: "EMA ニュース・プレス",
+        url: "https://www.ema.europa.eu/en/news.xml",
+        category: gov,
+      },
     ],
     /** 無料枠: URL要約が記事数ぶん走るため、大きすぎると 429 になりやすい */
     rssMaxItems: 10,
@@ -135,10 +131,9 @@ export const settings: Settings = {
     rssMaxItemsPerFeed: 4,
     /** 最終リストに入るカテゴリ別の上限。足りない場合は枠まで他カテゴリで埋める */
     rssCategoryCaps: {
-      [domestic]: 4,
+      [domestic]: 5,
       [overseas]: 3,
       [gov]: 2,
-      [ir]: 2,
     },
   },
   mailUi: {

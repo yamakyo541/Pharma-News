@@ -312,14 +312,41 @@ export function parseRssItems(xml: string): ParsedRssItem[] {
   }
 
   const channel = (doc as { rss?: { channel?: unknown } })?.rss?.channel;
-  if (!channel) {
-    throw new UserFacingError(
-      "RSS形式として channel が見つかりませんでした。RSS 2.0 のフィードURLか確認してください。",
-    );
+  if (channel) {
+    const ch = channel as { item?: ParsedRssItem | ParsedRssItem[] };
+    return toArray(ch.item);
   }
 
-  const ch = channel as { item?: ParsedRssItem | ParsedRssItem[] };
-  return toArray(ch.item);
+  // RSS 1.0（RDF）：厚労省・内閣府・PMDA 新着など（channel と item が rdf:RDF 直下の兄弟）
+  const rdf = (doc as { "rdf:RDF"?: unknown })?.["rdf:RDF"];
+  if (rdf && typeof rdf === "object" && rdf !== null) {
+    const root = rdf as Record<string, unknown>;
+    const raw = root.item;
+    const items = toArray(raw as RdfLikeItem | RdfLikeItem[] | undefined);
+    return items.map(rdfItemToParsed);
+  }
+
+  throw new UserFacingError(
+    "RSS形式として解釈できる channel（RSS 2.0）または rdf:RDF（RSS 1.0）が見つかりませんでした。フィードURLか形式を確認してください。",
+  );
+}
+
+/** fast-xml-parser が返す RSS 1.0 item の緩い形 */
+type RdfLikeItem = Record<string, unknown>;
+
+function rdfItemToParsed(item: RdfLikeItem): ParsedRssItem {
+  const title = normalizeTextField(item.title);
+  const link = normalizeTextField(item.link);
+  const description = normalizeTextField(item.description);
+  const pubDate =
+    normalizeTextField(item.pubDate) ??
+    normalizeTextField(item["dc:date"]);
+  const out: ParsedRssItem = {};
+  if (title !== undefined) out.title = title;
+  if (link !== undefined) out.link = link;
+  if (description !== undefined) out.description = description;
+  if (pubDate !== undefined) out.pubDate = pubDate;
+  return out;
 }
 
 function toArray<T>(x: T | T[] | undefined): T[] {
