@@ -68,8 +68,14 @@ async function main() {
   partialRunMetrics.rssItemCount = tweetsInWindow.length;
 
   if (tweetsInWindow.length === 0) {
+    console.warn(
+      `[RSS] 統計: 取得試行 ${rss.stats.fetchAttemptCount} / 成功 ${rss.stats.fetchSuccessCount} / 失敗フィード ${rss.stats.fetchFailures.length} 本`,
+    );
+    for (const f of rss.stats.fetchFailures) {
+      console.warn(`[RSS] 失敗: ${f.label} — ${f.message}`);
+    }
     throw new UserFacingError(
-      "分析対象のニュースが0件でした。contentSource.rssFeeds・取得期間（lookbackHours）・rssCategoryCaps を確認してください。",
+      "分析対象のニュースが0件でした。contentSource.rssFeeds・取得期間（lookbackHours）・rssCategoryCaps を確認してください。上記 [RSS] 統計・失敗ログも参照してください。",
     );
   }
 
