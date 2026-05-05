@@ -166,12 +166,15 @@ export async function fetchRssAsRawTweets(
       continue;
     }
 
-    let normalized = normalizeRssItems(items, feed.label, cutoff).map(
-      (t) => ({
-        ...t,
-        ...(feed.category ? { category: feed.category } : {}),
-      }),
-    );
+    let normalized = normalizeRssItems(
+      items,
+      feed.label,
+      cutoff,
+      feed.url,
+    ).map((t) => ({
+      ...t,
+      ...(feed.category ? { category: feed.category } : {}),
+    }));
     normalized.sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -200,6 +203,8 @@ export function normalizeRssItems(
   items: ParsedRssItem[],
   label: string,
   cutoff: Date,
+  /** 相対パスの item link を解決するときの基準（通常はそのフィードの RSS URL） */
+  feedSelfUrl?: string,
 ): RawTweet[] {
   const tweets: RawTweet[] = [];
   for (const raw of items) {
@@ -216,9 +221,13 @@ export function normalizeRssItems(
     }
     if (new Date(createdAt) < cutoff) continue;
 
+    const linkRaw = normalizeTextField(item.link);
+    const guidRaw = normalizeTextField(item.guid);
     const link =
-      pickHttpUrl(normalizeTextField(item.link)) ??
-      pickHttpUrl(normalizeTextField(item.guid));
+      pickHttpUrl(linkRaw) ??
+      pickHttpUrl(guidRaw) ??
+      resolveRelativeArticleUrl(linkRaw, feedSelfUrl) ??
+      resolveRelativeArticleUrl(guidRaw, feedSelfUrl);
     if (!link) continue;
 
     const title = stripTags(normalizeTextField(item.title) ?? "").trim();
@@ -378,5 +387,31 @@ function pickHttpUrl(s: string | undefined): string | undefined {
   const t = s?.trim();
   if (!t) return undefined;
   if (t.startsWith("http://") || t.startsWith("https://")) return t;
+  return undefined;
+}
+
+/** ミクスOnline 等の相対 link（/path?…）を feed の URL から絶対化する */
+function resolveRelativeArticleUrl(
+  raw: string | undefined,
+  feedSelfUrl: string | undefined,
+): string | undefined {
+  if (!raw || !feedSelfUrl) return undefined;
+  const t = raw.trim();
+  if (t.includes("://")) return undefined;
+  if (pickHttpUrl(t)) return undefined;
+  if (t.startsWith("//")) {
+    try {
+      const u = new URL(`https:${t}`);
+      return u.href;
+    } catch {
+      return undefined;
+    }
+  }
+  try {
+    const u = new URL(t, feedSelfUrl);
+    if (u.protocol === "http:" || u.protocol === "https:") return u.href;
+  } catch {
+    return undefined;
+  }
   return undefined;
 }

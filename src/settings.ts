@@ -81,7 +81,7 @@ export const settings: Settings = {
      * 編集方針（最善案の前提）
      * - 一次ソースは「国内専門メディア + 日・当局・主要国際当局」。海外英語メディアは重複・コストが大きいため除外。
      * - 1 日の分析対象は件数を抑え（rssMaxItems）、重要トピックに Jina/Gemini を集中させる。
-     * - 平日朝バッチの前後で取りこぼしが出にくいよう lookback を 48h。
+     * - lookback は 7 日: 国内メディアの RSS は「サイト上は新着でも pubDate が数日動かない」ことが多く、48h だと窓内 0 件になりやすい。
      * - 日刊薬業・日経メディカルは購読 RSS の URL を入れると国内の網羅が一段上がる（空の行は自動スキップ）。
      */
     rssFeeds: [
@@ -143,8 +143,11 @@ export const settings: Settings = {
     topTopicsSectionHeadingPrefix: "重要トピック TOP",
   },
   schedule: {
-    /** 平日朝ジョブでも金曜〜日曜の新着を拾いやすい幅 */
-    lookbackHours: 48,
+    /**
+     * 取得対象とする「何時間以内に公開された記事」か（RSS の pubDate 基準）。
+     * 48〜72 だと国内フィードだけ更新が遅い日に 0 件になりやすいため 7 日とする。
+     */
+    lookbackHours: 168,
   },
   urlContent: {
     enabled: true,

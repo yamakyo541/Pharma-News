@@ -103,6 +103,24 @@ describe("normalizeRssItems", () => {
     expect(out).toHaveLength(1);
     expect(out[0]!.url).toBe("https://example.com/good");
   });
+
+  it("相対 link はフィード URL を基準に絶対 URL になる", () => {
+    const cutoff = new Date("2020-01-01T00:00:00.000Z");
+    const out = normalizeRssItems(
+      [
+        {
+          title: "相対",
+          link: "/article/1",
+          pubDate: "Mon, 27 Apr 2026 12:00:00 GMT",
+        },
+      ],
+      "Test",
+      cutoff,
+      "https://www.example.com/path/feed.xml",
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]!.url).toBe("https://www.example.com/article/1");
+  });
 });
 
 describe("applyRssCategorySelection", () => {
