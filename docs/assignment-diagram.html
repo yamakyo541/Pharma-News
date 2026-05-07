@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>課題提出用図解 — Pharma News 報告ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: [
+                "Inter",
+                "ui-sans-serif",
+                "system-ui",
+                "Segoe UI",
+                "Hiragino Sans",
+                "Yu Gothic UI",
+                "Meiryo",
+                "sans-serif",
+              ],
+            },
+            colors: {
+              ink: { 950: "#0b1220", 900: "#0f172a", 800: "#1e293b" },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 antialiased"
+  >
+    <div class="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+      <header class="mb-10 text-center">
+        <p
+          class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400/90"
+        >
+          課題提出 · 図解
+        </p>
+        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">
+          Pharma News（報告ツール）— 画面と工夫したポイント
+        </h1>
+        <p class="mx-auto mt-3 max-w-2xl text-sm text-slate-400">
+          下記①に<strong class="font-semibold text-slate-200"
+            >実際のツール画面のスクリーンショット</strong
+          >を貼り付け、②の各欄を自分の作業内容に合わせて書き換えて提出してください。
+        </p>
+      </header>
+
+      <!-- ① スクリーンショット -->
+      <section class="mb-12">
+        <h2
+          class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-200"
+        >
+          <span
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500/20 text-sm text-cyan-300"
+            >①</span
+          >
+          報告ツールの画面（スクリーンショット）
+        </h2>
+        <figure
+          class="overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900/50 shadow-xl shadow-black/20"
+        >
+          <!-- 同じフォルダに assignment-tool-screenshot.png として画像を保存すると表示されます -->
+          <div class="relative bg-slate-950/80">
+            <img
+              id="tool-shot"
+              src="assignment-tool-screenshot.png"
+              alt="報告ツールのスクリーンショット"
+              class="mx-auto max-h-[min(70vh,520px)] w-full object-contain object-top"
+            />
+            <div
+              id="shot-placeholder"
+              class="hidden min-h-[280px] flex-col items-center justify-center gap-3 px-6 py-16 text-center"
+            >
+              <p class="text-sm font-medium text-slate-300">
+                ここにスクリーンショットが表示されます
+              </p>
+              <p class="max-w-md text-xs leading-relaxed text-slate-500">
+                <code class="rounded bg-slate-800 px-1.5 py-0.5 text-cyan-300"
+                  >docs/assignment-tool-screenshot.png</code
+                >
+                をエクスプローラーでこの HTML と同じ
+                <code class="text-slate-400">docs</code>
+                フォルダに保存するか、下の
+                <code class="text-slate-400">img</code> の
+                <code class="text-slate-400">src</code>
+                を自分の画像ファイル名に変更してください。
+              </p>
+              <p class="text-xs text-slate-600">
+                例：ターミナル実行ログ、
+                <code class="text-slate-500">tool-characteristics.html</code>
+                を開いたブラウザ、配信メールの画面 など
+              </p>
+            </div>
+          </div>
+          <figcaption
+            class="border-t border-slate-800 bg-slate-900/80 px-4 py-3 text-center text-xs text-slate-500"
+          >
+            図① — 報告対象ツールの実画面（提出前に必ず差し替え・確認）
+          </figcaption>
+        </figure>
+      </section>
+
+      <!-- ② 工夫したポイント -->
+      <section>
+        <h2
+          class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-200"
+        >
+          <span
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/20 text-sm text-violet-300"
+            >②</span
+          >
+          工夫したポイント
+        </h2>
+
+        <div class="grid gap-4">
+          <article
+            class="rounded-xl border border-slate-700/80 bg-slate-800/30 p-5 sm:p-6"
+          >
+            <h3 class="flex items-center gap-2 font-semibold text-cyan-200">
+              <span
+                class="flex h-6 w-6 items-center justify-center rounded bg-cyan-500/20 text-xs text-cyan-300"
+                >A</span
+              >
+              4 つのパーツの決め方
+            </h3>
+            <p class="mt-3 text-sm leading-relaxed text-slate-400">
+              <!-- ▼ 提出時に自分の言葉に書き換え -->
+              このツールは流れが分かりやすいように、
+①ニュースを集める（RSS）
+②記事本文を取得する（Jina）
+③内容を分析する（Gemini）
+④メールで届ける（Gmail）
+の4つに分けました。
+初めて見る人でも「入力→処理→出力」の順で理解できるように、この分け方にしています。
+            </p>
+          </article>
+
+          <article
+            class="rounded-xl border border-slate-700/80 bg-slate-800/30 p-5 sm:p-6"
+          >
+            <h3 class="flex items-center gap-2 font-semibold text-violet-200">
+              <span
+                class="flex h-6 w-6 items-center justify-center rounded bg-violet-500/20 text-xs text-violet-300"
+                >B</span
+              >
+              デザインの工夫
+            </h3>
+            <p class="mt-3 text-sm leading-relaxed text-slate-400">
+              <!-- ▼ 提出時に自分の言葉に書き換え -->
+              関連する業界記事の中から、重要度の高いTOP5だけを自動で抽出して配信するようにしました。
+              特に、朝の短い時間で全体を把握できるように、重要記事を優先して読める構成にしています。
+              また、各トピックに出典を付け、内容を確認しやすく信頼性が伝わるように工夫しました。
+            </p>
+          </article>
+
+          <article
+            class="rounded-xl border border-slate-700/80 bg-slate-800/30 p-5 sm:p-6"
+          >
+            <h3 class="flex items-center gap-2 font-semibold text-amber-200">
+              <span
+                class="flex h-6 w-6 items-center justify-center rounded bg-amber-500/20 text-xs text-amber-300"
+                >C</span
+              >
+              ぶつかった課題と解決
+            </h3>
+            <ul
+              class="mt-3 list-inside list-disc space-y-2 text-sm leading-relaxed text-slate-400"
+            >
+              <!-- ▼ 提出時に自分の経験に合わせて編集 -->
+              <li>
+                <strong class="text-slate-300">課題1：メール配信が失敗することがあった</strong
+                >：Gmailの設定（アプリパスワード・宛先アドレス）に誤りがあると送信できなかった。<strong class="text-slate-300">解決：</strong
+                >環境変数（コードの外で管理する設定値）を見直し、エラー内容を確認して修正した。
+              </li>
+              <li>
+                <strong class="text-slate-300">課題2：外部サービスが不安定なときがあった</strong
+                >：RSS取得やAI分析で、タイムアウト（一定時間で失敗と判断）や一時失敗が発生した。<strong class="text-slate-300">解決：</strong
+                >リトライ（再実行）と並列数（同時実行数）を調整し、処理が止まりにくい構成にした。
+              </li>
+              <li>
+                <strong class="text-slate-300">課題3：朝の短時間で情報を把握しにくかった</strong
+                >：記事数が多いと、重要な情報を見つけるのに時間がかかった。<strong class="text-slate-300">解決：</strong
+                >重要度TOP5に絞って配信し、各トピックに出典を付けて確認しやすくした。
+              </li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <footer class="mt-12 border-t border-slate-800 pt-6 text-center text-xs text-slate-500">
+        <p>
+          ブラウザでこのファイルを開き、必要なら「印刷 → PDF保存」で1枚にまとめて提出できます。<br />
+          詳細な特性図は
+          <a
+            class="text-cyan-500/90 underline decoration-cyan-500/40 underline-offset-2 hover:text-cyan-400"
+            href="tool-characteristics.html"
+            >tool-characteristics.html</a
+          >
+          も参照してください。
+        </p>
+      </footer>
+    </div>
+    <script>
+      (function () {
+        var img = document.getElementById("tool-shot");
+        var ph = document.getElementById("shot-placeholder");
+        if (!img || !ph) return;
+        function showPlaceholder() {
+          img.classList.add("hidden");
+          ph.classList.remove("hidden");
+          ph.classList.add("flex");
+        }
+        img.addEventListener("error", showPlaceholder);
+        if (!img.complete) return;
+        if (img.naturalWidth === 0) showPlaceholder();
+      })();
+    </script>
+  </body>
+</html>

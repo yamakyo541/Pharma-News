@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pharma News — ツール特性の図解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: [
+                "Inter",
+                "ui-sans-serif",
+                "system-ui",
+                "Segoe UI",
+                "Hiragino Sans",
+                "Yu Gothic UI",
+                "Meiryo",
+                "sans-serif",
+              ],
+            },
+            colors: {
+              ink: { 950: "#0b1220", 900: "#0f172a", 800: "#1e293b" },
+              accent: { cyan: "#22d3ee", violet: "#a78bfa", amber: "#fbbf24" },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 antialiased"
+  >
+    <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+      <header class="mb-14 text-center">
+        <p
+          class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400/90"
+        >
+          AI-news / Pharma News
+        </p>
+        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">
+          このツールの特性
+        </h1>
+        <p class="mx-auto mt-4 max-w-2xl text-sm text-slate-400 sm:text-base">
+          RSS の新着を集め、本文取得と Gemini 分析を経て Gmail
+          でダイジェスト配信する<strong class="font-semibold text-slate-200"
+            >一方向バッチパイプライン</strong
+          >です。設定の中心は <code class="rounded bg-slate-800 px-1.5 py-0.5 text-cyan-300">src/settings.ts</code>、秘密情報は環境変数です。
+        </p>
+      </header>
+
+      <!-- データフロー -->
+      <section class="mb-16">
+        <h2
+          class="mb-6 flex items-center gap-2 text-lg font-semibold text-slate-200"
+        >
+          <span
+            class="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-300"
+            >①</span
+          >
+          処理の流れ（main の 5 ステップ）
+        </h2>
+
+        <div
+          class="relative overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-900/50 p-6 shadow-xl shadow-black/20 backdrop-blur sm:p-8"
+        >
+          <div
+            class="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl"
+          ></div>
+          <div
+            class="pointer-events-none absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-violet-500/10 blur-3xl"
+          ></div>
+
+          <ol
+            class="relative grid gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:gap-3"
+          >
+            <li
+              class="group flex flex-col rounded-xl border border-slate-600/60 bg-slate-800/40 p-4 transition hover:border-cyan-500/40"
+            >
+              <span
+                class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500"
+                >Step 1</span
+              >
+              <span class="text-lg font-semibold text-cyan-200">RSS 取得</span>
+              <span class="mt-1 text-xs leading-relaxed text-slate-400"
+                >複数フィードを窓（lookback）内でミックス。サンプル実行時はモック JSON も可。</span
+              >
+            </li>
+            <li
+              class="group flex flex-col rounded-xl border border-slate-600/60 bg-slate-800/40 p-4 transition hover:border-violet-500/40"
+            >
+              <span
+                class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500"
+                >Step 2</span
+              >
+              <span class="text-lg font-semibold text-violet-200"
+                >Jina Reader</span
+              >
+              <span class="mt-1 text-xs leading-relaxed text-slate-400"
+                >記事 URL の本文を並列取得（設定で並列数・タイムアウト等）。</span
+              >
+            </li>
+            <li
+              class="group flex flex-col rounded-xl border border-slate-600/60 bg-slate-800/40 p-4 transition hover:border-amber-500/40"
+            >
+              <span
+                class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500"
+                >Step 3–4</span
+              >
+              <span class="text-lg font-semibold text-amber-200">Gemini</span>
+              <span class="mt-1 text-xs leading-relaxed text-slate-400"
+                >URL ごと要約（Flash 等）→ 全体トレンド分析。モデル名は settings で指定。</span
+              >
+            </li>
+            <li
+              class="group flex flex-col rounded-xl border border-slate-600/60 bg-slate-800/40 p-4 transition hover:border-emerald-500/40"
+            >
+              <span
+                class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500"
+                >Step 5</span
+              >
+              <span class="text-lg font-semibold text-emerald-200"
+                >Gmail 送信</span
+              >
+              <span class="mt-1 text-xs leading-relaxed text-slate-400"
+                >HTML/テキストのダイジェストメールを SMTP で配信。</span
+              >
+            </li>
+            <li
+              class="group flex flex-col rounded-xl border border-dashed border-slate-500/50 bg-slate-800/30 p-4 sm:col-span-2 lg:col-span-1"
+            >
+              <span
+                class="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500"
+                >任意</span
+              >
+              <span class="text-lg font-semibold text-slate-200"
+                >配信済み URL 記録</span
+              >
+              <span class="mt-1 text-xs leading-relaxed text-slate-400"
+                >有効時は未配信のみ処理し、成功後に URL を永続化して重複配信を抑制。</span
+              >
+            </li>
+          </ol>
+
+          <!-- 矢印（デスクトップ） -->
+          <div
+            class="mt-6 hidden items-center justify-between gap-1 px-2 text-slate-500 lg:flex"
+          >
+            <div class="flex flex-1 items-center">
+              <div class="h-px flex-1 bg-gradient-to-r from-transparent to-slate-600"></div>
+              <span class="px-2 text-lg text-cyan-500/80">→</span>
+            </div>
+            <div class="flex flex-1 items-center">
+              <div class="h-px flex-1 bg-slate-600"></div>
+              <span class="px-2 text-lg text-violet-400/80">→</span>
+            </div>
+            <div class="flex flex-1 items-center">
+              <div class="h-px flex-1 bg-slate-600"></div>
+              <span class="px-2 text-lg text-amber-400/80">→</span>
+            </div>
+            <div class="flex flex-1 items-center">
+              <div class="h-px flex-1 bg-slate-600"></div>
+              <span class="px-2 text-lg text-emerald-400/80">→</span>
+            </div>
+            <div class="flex flex-[0.6] items-center opacity-60">
+              <div class="h-px flex-1 bg-slate-600"></div>
+              <span class="px-1 text-xs text-slate-500">（記録）</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 外部システム図 -->
+      <section class="mb-16">
+        <h2
+          class="mb-6 flex items-center gap-2 text-lg font-semibold text-slate-200"
+        >
+          <span
+            class="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20 text-violet-300"
+            >②</span
+          >
+          周辺システムとの関係
+        </h2>
+        <div
+          class="grid gap-6 rounded-2xl border border-slate-700/80 bg-slate-900/40 p-6 sm:grid-cols-3 sm:p-8"
+        >
+          <div class="text-center">
+            <div
+              class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/15 ring-1 ring-cyan-400/30"
+            >
+              <svg
+                class="h-8 w-8 text-cyan-300"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253M16.5 6.348a8.955 8.955 0 00-1.303-3.405"
+                />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-slate-100">入力</h3>
+            <p class="mt-2 text-xs text-slate-400">
+              公開 RSS（薬業系メディア等）<br />HTTP でフィード取得
+            </p>
+          </div>
+          <div class="text-center">
+            <div
+              class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/15 ring-1 ring-violet-400/30"
+            >
+              <svg
+                class="h-8 w-8 text-violet-300"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"
+                />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-slate-100">処理コア</h3>
+            <p class="mt-2 text-xs text-slate-400">
+              Node（TypeScript）<br />Jina API · Gemini API
+            </p>
+          </div>
+          <div class="text-center">
+            <div
+              class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/15 ring-1 ring-emerald-400/30"
+            >
+              <svg
+                class="h-8 w-8 text-emerald-300"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+                />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-slate-100">出力</h3>
+            <p class="mt-2 text-xs text-slate-400">
+              Gmail（SMTP）<br />受講生・関係者へダイジェスト
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 設計上の特性カード -->
+      <section>
+        <h2
+          class="mb-6 flex items-center gap-2 text-lg font-semibold text-slate-200"
+        >
+          <span
+            class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20 text-amber-300"
+            >③</span
+          >
+          設計上の特性（ざっくり一覧）
+        </h2>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <article
+            class="rounded-xl border border-slate-700/80 bg-slate-800/30 p-5"
+          >
+            <h3 class="font-semibold text-amber-200">単発ジョブ型</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">
+              常駐サーバではなく、<strong class="text-slate-300"
+                >起動したら最後まで流して終了</strong
+              >します。GitHub Actions の定期実行などに向いています。
+            </p>
+          </article>
+          <article
+            class="rounded-xl border border-slate-700/80 bg-slate-800/30 p-5"
+          >
+            <h3 class="font-semibold text-cyan-200">設定の単一窓口</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">
+              ビジネス寄りの定数は
+              <code class="text-cyan-300">settings.ts</code>
+              に集約。環境依存の鍵は
+              <code class="text-cyan-300">config</code>（zod 検証）側です。
+            </p>
+          </article>
+          <article
+            class="rounded-xl border border-slate-700/80 bg-slate-800/30 p-5"
+          >
+            <h3 class="font-semibold text-violet-200">エラー文言の意図</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">
+              <code class="text-violet-300">UserFacingError</code>
+              は受講生向けメッセージとして扱われ、それ以外は内部エラー扱いでログに出ます。
+            </p>
+          </article>
+          <article
+            class="rounded-xl border border-slate-700/80 bg-slate-800/30 p-5"
+          >
+            <h3 class="font-semibold text-emerald-200">観測可能性</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">
+              GitHub Actions 上ではジョブサマリーに件数・失敗理由などを書き出し、運用時の把握を補助します。
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <footer class="mt-16 border-t border-slate-800 pt-8 text-center text-xs text-slate-500">
+        <p>
+          ブラウザでこの HTML を開くだけで表示されます（ビルド不要）。<br />
+          実装の詳細はリポジトリの <code class="text-slate-400">src/main.ts</code> を参照してください。
+        </p>
+      </footer>
+    </div>
+  </body>
+</html>
