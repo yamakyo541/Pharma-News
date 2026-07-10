@@ -90,18 +90,31 @@ export const settings: Settings = {
         label: "ミクスOnline",
         url: "https://www.mixonline.jp/DesktopModules/MixOnline_Rss/MixOnlinerss.aspx?rssmode=3",
         category: domestic,
+        maxItems: 1,
       },
       {
         label: "AnswersNews",
         url: "https://answers.ten-navi.com/pharmanews/feed/",
         category: domestic,
+        maxItems: 1,
       },
       {
         label: "薬事日報",
         url: "https://www.yakuji.co.jp/feed/",
         category: domestic,
+        maxItems: 1,
       },
-      { label: "日刊薬業（購読URLを設定）", url: "", category: domestic },
+      /**
+       * 日刊薬業: サイトマップの公開 RSS（ログイン不要で一覧取得可）。
+       * 判断支援向けは「主要ニュース」。網羅したい場合は /article/rss.xml に変更可。
+       * 入手手順: https://nk.jiho.jp/sitemap → 主要ニュース横の RSS アイコン
+       */
+      {
+        label: "日刊薬業（主要ニュース）",
+        url: "https://nk.jiho.jp/major/rss.xml",
+        category: domestic,
+        maxItems: 2,
+      },
       { label: "日経メディカル（購読URLを設定）", url: "", category: domestic },
 
       // 政策・国際当局（5）— 国内メディアが薄い承認・通知・国際規制を補完
