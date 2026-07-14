@@ -22,13 +22,24 @@ export interface Settings {
      */
     rssCategoryCaps?: Record<string, number>;
   };
-  /** Gmail 用の件名プレフィックス・差出人表示名・本文先頭の見出し */
+  /** Gmail 用の件名・差出人・本文見出し・朝スキャン向け見た目 */
   mailUi: {
     senderDisplayName: string;
     emailSubjectPrefix: string;
     digestHeading: string;
     /** メール内「重要トピック」ブロックの見出しプレフィックス */
     topTopicsSectionHeadingPrefix: string;
+    /** 件名に添える1位トピック名の最大文字数（超えたら末尾を「…」） */
+    subjectTopTopicMaxChars: number;
+    /** HTMLメールの色・フォント（インラインCSS用） */
+    theme: {
+      accent: string;
+      accentSoft: string;
+      text: string;
+      muted: string;
+      border: string;
+      fontFamily: string;
+    };
   };
   schedule: {
     lookbackHours: number;
@@ -154,6 +165,16 @@ export const settings: Settings = {
     emailSubjectPrefix: "【製薬ニュース】",
     digestHeading: "📰 Pharma News",
     topTopicsSectionHeadingPrefix: "重要トピック TOP",
+    subjectTopTopicMaxChars: 24,
+    theme: {
+      accent: "#1a56a8",
+      accentSoft: "#e8f1fb",
+      text: "#222222",
+      muted: "#555555",
+      border: "#c5d8ef",
+      fontFamily:
+        '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, Meiryo, sans-serif',
+    },
   },
   schedule: {
     /**

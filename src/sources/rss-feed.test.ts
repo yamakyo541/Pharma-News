@@ -136,6 +136,15 @@ describe("applyRssCategorySelection", () => {
       emailSubjectPrefix: "",
       digestHeading: "",
       topTopicsSectionHeadingPrefix: "",
+      subjectTopTopicMaxChars: 24,
+      theme: {
+        accent: "#1a56a8",
+        accentSoft: "#e8f1fb",
+        text: "#222222",
+        muted: "#555555",
+        border: "#c5d8ef",
+        fontFamily: "sans-serif",
+      },
     },
     schedule: { lookbackHours: 24 },
     urlContent: {

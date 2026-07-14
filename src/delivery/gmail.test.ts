@@ -82,7 +82,9 @@ describe("sendDigestEmail", () => {
     expect(arg.from).toContain(appSettings.mailUi.senderDisplayName);
     expect(arg.from).toContain("sender@example.com");
     expect(arg.to).toBe("reader@example.com");
-    expect(arg.subject).toMatch(/^【製薬ニュース】 \d{4}-\d{2}-\d{2} 重要トピック3件$/);
+    expect(arg.subject).toMatch(
+      /^【製薬ニュース】 \d{4}-\d{2}-\d{2} 重要トピック3件｜GPT-5\.5が発表$/,
+    );
     expect(arg.html).toContain("GPT-5.5");
     expect(arg.text).toContain("GPT-5.5");
     expect(arg.html).toContain("openai-123");
@@ -95,5 +97,34 @@ describe("sendDigestEmail", () => {
     expect(arg.text).toContain("■ 1. GPT-5.5が発表");
     expect(arg.text).toContain("■ 2. 第2位トピック");
     expect(arg.text).toContain("■ 3. 第3位トピック");
+    // 朝スキャン向け見た目
+    expect(arg.html).toContain(appSettings.mailUi.theme.accent);
+    expect(arg.html).toContain(appSettings.mailUi.theme.accentSoft);
+    expect(arg.html).toContain("border-left:4px solid");
+    expect(arg.html).toContain(appSettings.mailUi.theme.fontFamily);
+  });
+
+  it("件名の1位トピック名が長いとき切り詰める", async () => {
+    const longTitle = "あ".repeat(30);
+    const analysis: Analysis = {
+      ...validAnalysis,
+      top_topics: [
+        {
+          title: longTitle,
+          details: validAnalysis.top_topics[0]!.details,
+          sources: validAnalysis.top_topics[0]!.sources,
+        },
+        ...validAnalysis.top_topics.slice(1),
+      ],
+    };
+
+    await sendDigestEmail(analysis, mockConfig, appSettings);
+
+    const arg = mockSendMail.mock.calls[0]![0] as { subject: string };
+    const max = appSettings.mailUi.subjectTopTopicMaxChars;
+    expect(arg.subject).toContain("｜");
+    expect(arg.subject.endsWith("…")).toBe(true);
+    const topicPart = arg.subject.split("｜")[1]!;
+    expect([...topicPart].length).toBe(max);
   });
 });

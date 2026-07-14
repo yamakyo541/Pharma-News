@@ -4,6 +4,8 @@ import type { Analysis } from "../analysis/schema.js";
 import type { Settings } from "../settings.js";
 import { UserFacingError } from "../utils/errors.js";
 
+type MailTheme = Settings["mailUi"]["theme"];
+
 export async function sendDigestEmail(
   analysis: Analysis,
   config: Config,
@@ -23,11 +25,10 @@ export async function sendDigestEmail(
   const text = buildEmailText(analysis, settings);
 
   try {
-    const topCount = analysis.top_topics.length;
     await transporter.sendMail({
       from: `"${settings.mailUi.senderDisplayName}" <${config.GMAIL_USER}>`,
       to: config.GMAIL_TO,
-      subject: buildSubject(settings, topCount),
+      subject: buildSubject(analysis, settings),
       text,
       html,
     });
@@ -79,53 +80,109 @@ function appendRankedTopicsText(
 }
 
 function buildEmailHtml(analysis: Analysis, settings: Settings): string {
+  const theme = settings.mailUi.theme;
+  const bodyFont = `font-family:${theme.fontFamily};line-height:1.65;color:${theme.text};`;
+
+  const overviewItems = analysis.daily_overview
+    .map(
+      (line) =>
+        `<li style="margin:0 0 0.5rem 0;font-size:1.0625rem;font-weight:600;">${escapeHtml(line)}</li>`,
+    )
+    .join("");
+
+  const implicationItems = analysis.industry_implications
+    .map((line) => `<li style="margin:0 0 0.4rem 0;">${escapeHtml(line)}</li>`)
+    .join("");
+
   const parts: string[] = [
-    "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body style=\"font-family:sans-serif;line-height:1.5;color:#222;\">",
-    `<h1 style="font-size:1.25rem;">${escapeHtml(settings.mailUi.digestHeading)}</h1>`,
-    "<h2 style=\"font-size:1rem;margin-top:1.5rem;\">今日の全体俯瞰</h2>",
-    `<ul style="margin-top:0;">${analysis.daily_overview.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`,
-    "<h2 style=\"font-size:1rem;margin-top:1.5rem;\">今日の示唆</h2>",
-    `<ul style="margin-top:0;">${analysis.industry_implications.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`,
+    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>`,
+    `<body style="margin:0;padding:0;background:#f5f7fa;${bodyFont}">`,
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fa;">`,
+    `<tr><td align="center" style="padding:16px 12px;">`,
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border:1px solid ${theme.border};">`,
+    `<tr><td style="padding:24px 20px;${bodyFont}">`,
+
+    // ブランド見出し
+    `<p style="margin:0 0 1.25rem 0;font-size:1.35rem;font-weight:700;color:${theme.accent};">${escapeHtml(settings.mailUi.digestHeading)}</p>`,
+
+    // 今日の全体俯瞰（最優先）
+    sectionHeadingHtml("今日の全体俯瞰", theme, true),
+    `<ul style="margin:0.75rem 0 0 0;padding-left:1.25rem;">${overviewItems}</ul>`,
+
+    // 今日の示唆（色帯）
+    `<div style="margin-top:1.5rem;">`,
+    sectionHeadingHtml("今日の示唆", theme, false),
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:0.75rem;border-collapse:collapse;">`,
+    `<tr><td style="background:${theme.accentSoft};border-left:4px solid ${theme.accent};padding:12px 14px;">`,
+    `<ul style="margin:0;padding-left:1.15rem;color:${theme.text};">${implicationItems}</ul>`,
+    `</td></tr></table>`,
+    `</div>`,
   ];
 
   appendRankedTopicsHtml(
     parts,
     `${settings.mailUi.topTopicsSectionHeadingPrefix}${analysis.top_topics.length}`,
     analysis.top_topics,
+    theme,
   );
 
-  parts.push("</body></html>");
+  parts.push(
+    `</td></tr></table>`,
+    `</td></tr></table>`,
+    `</body></html>`,
+  );
   return parts.join("\n");
+}
+
+function sectionHeadingHtml(
+  label: string,
+  theme: MailTheme,
+  prominent: boolean,
+): string {
+  const size = prominent ? "1.125rem" : "1rem";
+  return `<h2 style="margin:0;font-size:${size};font-weight:700;color:${theme.accent};border-bottom:2px solid ${theme.accent};padding-bottom:4px;display:inline-block;">${escapeHtml(label)}</h2>`;
 }
 
 function appendRankedTopicsHtml(
   parts: string[],
   heading: string,
   items: Analysis["top_topics"],
+  theme: MailTheme,
 ): void {
-  parts.push(`<h2 style="font-size:1rem;margin-top:1.5rem;">${escapeHtml(heading)}</h2>`);
+  parts.push(`<div style="margin-top:1.75rem;">`);
+  parts.push(sectionHeadingHtml(heading, theme, false));
   items.forEach((topic, i) => {
     const rankedTitle = `${i + 1}. ${topic.title}`;
-    parts.push(`<h3 style="font-size:1rem;margin-bottom:0.25rem;">${escapeHtml(rankedTitle)}</h3>`);
+    parts.push(
+      `<div style="margin-top:1.1rem;padding-top:0.85rem;border-top:1px solid ${theme.border};">`,
+      `<h3 style="margin:0 0 0.4rem 0;font-size:1.05rem;font-weight:700;color:${theme.text};">${escapeHtml(rankedTitle)}</h3>`,
+    );
     if (topic.details.length > 0) {
       const detailLis = topic.details
         .map((d) => {
           const href = escapeAttr(d.source_url);
-          return `<li>${escapeHtml(d.text)} <a href="${href}" style="font-size:0.875rem;">（出典）</a></li>`;
+          return `<li style="margin:0 0 0.45rem 0;">${escapeHtml(d.text)} <a href="${href}" style="font-size:0.8125rem;color:${theme.accent};text-decoration:underline;">（出典）</a></li>`;
         })
         .join("");
-      parts.push(`<ul style="margin-top:0;">${detailLis}</ul>`);
+      parts.push(
+        `<ul style="margin:0.35rem 0 0 0;padding-left:1.2rem;">${detailLis}</ul>`,
+      );
     }
     if (topic.sources.length > 0) {
       const links = topic.sources
         .map((url) => {
           const href = escapeAttr(url);
-          return `<li><a href="${href}">${escapeHtml(url)}</a></li>`;
+          return `<li style="margin:0 0 0.25rem 0;word-break:break-all;"><a href="${href}" style="color:${theme.muted};font-size:0.8125rem;">${escapeHtml(url)}</a></li>`;
         })
         .join("");
-      parts.push(`<p style="font-size:0.875rem;color:#555;">参考</p><ul>${links}</ul>`);
+      parts.push(
+        `<p style="margin:0.6rem 0 0.2rem 0;font-size:0.8125rem;font-weight:700;color:${theme.muted};">参考</p>`,
+        `<ul style="margin:0;padding-left:1.2rem;">${links}</ul>`,
+      );
     }
+    parts.push(`</div>`);
   });
+  parts.push(`</div>`);
 }
 
 function escapeHtml(s: string): string {
@@ -143,8 +200,24 @@ function escapeAttr(s: string): string {
     .replace(/</g, "&lt;");
 }
 
-function buildSubject(settings: Settings, topCount: number): string {
-  return `${settings.mailUi.emailSubjectPrefix} ${formatJstDate()} 重要トピック${topCount}件`;
+function buildSubject(analysis: Analysis, settings: Settings): string {
+  const topCount = analysis.top_topics.length;
+  const base = `${settings.mailUi.emailSubjectPrefix} ${formatJstDate()} 重要トピック${topCount}件`;
+  const topTitle = analysis.top_topics[0]?.title;
+  if (!topTitle) return base;
+  const truncated = truncateForSubject(
+    topTitle,
+    settings.mailUi.subjectTopTopicMaxChars,
+  );
+  return `${base}｜${truncated}`;
+}
+
+/** 件名用に文字数で切り詰め（絵文字なども1文字扱いに近いスプレッド） */
+function truncateForSubject(title: string, maxChars: number): string {
+  const chars = [...title];
+  if (chars.length <= maxChars) return title;
+  if (maxChars <= 1) return "…";
+  return `${chars.slice(0, maxChars - 1).join("")}…`;
 }
 
 function formatJstDate(): string {
